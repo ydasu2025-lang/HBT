@@ -66,7 +66,7 @@ def set_last_post(user_id: int):
     conn.commit()
 
 ALLOWED_CHANNEL_IDS = [1486774240735789066, 1486774297505824810, 1486774309018931240, 1486774516595032188, 1486775878502584360]
-
+ALLOWED_COMMAND_CHANNELS = [1486779110758940853]
 @bot.event
 async def on_message(message):
     if message.author.bot:

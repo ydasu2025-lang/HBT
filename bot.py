@@ -196,3 +196,41 @@ if __name__ == "__main__":
     except Exception:
         traceback.print_exc()
         raise
+
+from discord import app_commands
+
+@bot.tree.command(name="givehpt", description="管理者用：ユーザーにHPTを送る")
+@app_commands.describe(user="送り先", amount="送るHPT")
+async def givehpt(interaction: discord.Interaction, user: discord.Member, amount: int):
+
+    # 管理者チェック
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message(
+            "権限がありません。",
+            ephemeral=True
+        )
+        return
+
+    # チャンネル制限（あるなら）
+    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
+        await interaction.response.send_message(
+            "このコマンドは指定チャンネルで使ってください。",
+            ephemeral=True
+        )
+        return
+
+    # 数値チェック
+    if amount <= 0:
+        await interaction.response.send_message(
+            "1以上の数値を入力してください。",
+            ephemeral=True
+        )
+        return
+
+    # 付与
+    add_coins(user.id, amount)
+
+    await interaction.response.send_message(
+        f"💸 {user.display_name} に {amount} HPT付与しました。",
+        ephemeral=True
+    )

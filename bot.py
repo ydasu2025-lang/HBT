@@ -53,7 +53,7 @@ async def on_message(message):
     if time.time() - last > 10:
         add_coins(message.author.id, 10)
         set_last_post(message.author.id)
-        await message.channel.send(f"{message.author.display_name} +10コイン！")
+        await message.channel.send(f"{message.author.display_name} +10HPT")
 
     await bot.process_commands(message)
 
@@ -81,7 +81,7 @@ async def gacha(ctx):
     coins, _ = get_user(ctx.author.id)
 
     if coins < 50:
-        await ctx.send("コイン足りない！")
+        await ctx.send("HPTが足りない！")
         return
 
     add_coins(ctx.author.id, -50)

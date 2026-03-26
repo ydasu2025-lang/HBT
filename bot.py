@@ -65,9 +65,14 @@ def set_last_post(user_id: int):
     cur.execute("UPDATE users SET last_post=? WHERE user_id=?", (time.time(), str(user_id)))
     conn.commit()
 
+ALLOWED_CHANNEL_IDS = [1486774240735789066, 1486774297505824810, 1486774309018931240, 1486774516595032188, 1486775878502584360]
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
+        return
+
+    if message.channel.id not in ALLOWED_CHANNEL_IDS:
         return
 
     allowed_exts = (
@@ -96,7 +101,7 @@ async def on_message(message):
     await bot.process_commands(message)
     
 GACHA = [
-    ("みゆ", "⭐️", 70, "https://picsum.photos/300"),
+    ("みゆ", "⭐️", 70, "https://cdn.discordapp.com/attachments/1486776583858425911/1486834490017055010/S.png?ex=69c6f206&is=69c5a086&hm=69ea5c80115bc07d31794aeefad633b5a099eb68336ce3fa79ff63ba8ac83f22&"),
     ("ほのか", "⭐️⭐️", 25, "https://picsum.photos/301"),
     ("めい", "⭐️⭐️⭐️⭐️", 5, "https://picsum.photos/302"),
 ]

@@ -66,44 +66,31 @@ def set_last_post(user_id: int):
     conn.commit()
 
 @bot.event
-async def on_ready():
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} slash commands")
-    except Exception as e:
-        print(f"Slash sync error: {e}")
-    print(f"Logged in as {bot.user} ({bot.user.id})")
-
-@bot.event
 async def on_message(message):
     if message.author.bot:
         return
 
-    # 画像・動画の拡張子
     allowed_exts = (
         ".png", ".jpg", ".jpeg", ".gif", ".webp",
         ".mp4", ".mov", ".webm", ".mkv"
     )
 
-    has_media = False
+    media_count = 0
 
     for attachment in message.attachments:
         content_type = attachment.content_type or ""
         filename = attachment.filename.lower()
 
         if content_type.startswith("image/") or content_type.startswith("video/"):
-            has_media = True
-            break
+            media_count += 1
+        elif filename.endswith(allowed_exts):
+            media_count += 1
 
-        if filename.endswith(allowed_exts):
-            has_media = True
-            break
-
-    if has_media:
+    if media_count > 0:
         coins, last = get_user(message.author.id)
 
         if time.time() - last > 10:
-            add_coins(message.author.id, 10)
+            add_coins(message.author.id, media_count * 10)
             set_last_post(message.author.id)
 
     await bot.process_commands(message)

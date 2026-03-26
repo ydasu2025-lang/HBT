@@ -116,6 +116,15 @@ def roll():
 
 @bot.tree.command(name="balance", description="自分のHPTを見る")
 async def balance(interaction: discord.Interaction):
+
+    
+    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
+        await interaction.response.send_message(
+            "このコマンドは指定チャンネルで使ってください。",
+            ephemeral=True
+        )
+        return
+        
     coins, _ = get_user(interaction.user.id)
     await interaction.response.send_message(
         f"💰 {interaction.user.display_name} のHPT: {coins}",
@@ -124,6 +133,14 @@ async def balance(interaction: discord.Interaction):
 
 @bot.tree.command(name="gacha", description="50HPTでガチャを引く")
 async def gacha(interaction: discord.Interaction):
+
+    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
+        await interaction.response.send_message(
+            "このコマンドは指定チャンネルで使ってください。",
+            ephemeral=True
+        )
+        return
+        
     coins, _ = get_user(interaction.user.id)
 
     if coins < 50:

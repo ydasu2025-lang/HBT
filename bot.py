@@ -2,6 +2,7 @@ from flask import Flask
 import threading
 import discord
 from discord.ext import commands
+from discord import app_commands
 import sqlite3
 import random
 import time
@@ -42,36 +43,43 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 conn.commit()
 
-def get_user(user_id):
+def get_user(user_id: int):
     cur.execute("SELECT coins, last_post FROM users WHERE user_id=?", (str(user_id),))
     row = cur.fetchone()
     if not row:
-        cur.execute("INSERT INTO users (user_id, coins, last_post) VALUES (?, 0, 0)", (str(user_id),))
+        cur.execute(
+            "INSERT INTO users (user_id, coins, last_post) VALUES (?, 0, 0)",
+            (str(user_id),)
+        )
         conn.commit()
         return 0, 0
     return row
 
-def set_coins(user_id, amount):
-    amount = max(0, amount)
-    cur.execute("UPDATE users SET coins=? WHERE user_id=?", (amount, str(user_id)))
-    conn.commit()
-
-def add_coins(user_id, amount):
+def add_coins(user_id: int, amount: int):
     coins, _ = get_user(user_id)
     new_amount = max(0, coins + amount)
     cur.execute("UPDATE users SET coins=? WHERE user_id=?", (new_amount, str(user_id)))
     conn.commit()
 
-def set_last_post(user_id):
+def set_last_post(user_id: int):
     cur.execute("UPDATE users SET last_post=? WHERE user_id=?", (time.time(), str(user_id)))
     conn.commit()
 
 @bot.event
-async def on_message(message):
+async def on_ready():
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} slash commands")
+    except Exception as e:
+        print(f"Slash sync error: {e}")
+    print(f"Logged in as {bot.user} ({bot.user.id})")
+
+@bot.event
+async def on_message(message: discord.Message):
     if message.author.bot:
         return
 
-    coins, last = get_user(message.author.id)
+    _, last = get_user(message.author.id)
 
     if time.time() - last > 10:
         add_coins(message.author.id, 10)
@@ -79,33 +87,10 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-@bot.command()
-async def balance(ctx):
-    coins, _ = get_user(ctx.author.id)
-    await ctx.send(f"💰 {ctx.author.display_name} のHPT: {coins}")
-
-@bot.command()
-async def top(ctx):
-    cur.execute("SELECT user_id, coins FROM users ORDER BY coins DESC LIMIT 10")
-    rows = cur.fetchall()
-
-    if not rows:
-        await ctx.send("まだランキングデータがないよ。")
-        return
-
-    lines = []
-    for i, (user_id, coins) in enumerate(rows, start=1):
-        member = ctx.guild.get_member(int(user_id)) if ctx.guild else None
-        name = member.display_name if member else f"User {user_id}"
-        lines.append(f"{i}位：{name} - {coins} HPT")
-
-    embed = discord.Embed(title="🏆 HPTランキング", description="\n".join(lines))
-    await ctx.send(embed=embed)
-
 GACHA = [
-    ("ハズレ犬", "⭐️", 70, "https://picsum.photos/300"),
-    ("レア猫", "⭐️⭐️", 25, "https://picsum.photos/301"),
-    ("神ドラゴン", "⭐️⭐️⭐️⭐️", 5, "https://picsum.photos/302"),
+    ("みゆ", "⭐️", 70, "https://picsum.photos/300"),
+    ("ほのか", "⭐️⭐️", 25, "https://picsum.photos/301"),
+    ("めい", "⭐️⭐️⭐️⭐️", 5, "https://picsum.photos/302"),
 ]
 
 def roll():
@@ -116,15 +101,26 @@ def roll():
         if r <= total:
             return name, rarity, img
 
-@bot.command()
-async def gacha(ctx):
-    coins, _ = get_user(ctx.author.id)
+@bot.tree.command(name="balance", description="自分のHPTを見る")
+async def balance(interaction: discord.Interaction):
+    coins, _ = get_user(interaction.user.id)
+    await interaction.response.send_message(
+        f"💰 {interaction.user.display_name} のHPT: {coins}",
+        ephemeral=True
+    )
+
+@bot.tree.command(name="gacha", description="50HPTでガチャを引く")
+async def gacha(interaction: discord.Interaction):
+    coins, _ = get_user(interaction.user.id)
 
     if coins < 50:
-        await ctx.send("HPTが足りない！50HPT必要です。")
+        await interaction.response.send_message(
+            "HPTが足りない！50HPT必要です。",
+            ephemeral=True
+        )
         return
 
-    add_coins(ctx.author.id, -50)
+    add_coins(interaction.user.id, -50)
 
     name, rarity, img = roll()
 
@@ -136,7 +132,32 @@ async def gacha(ctx):
     embed.set_image(url=img)
     embed.set_footer(text="50HPT消費しました")
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="top", description="HPTランキングを見る")
+async def top(interaction: discord.Interaction):
+    cur.execute("SELECT user_id, coins FROM users ORDER BY coins DESC LIMIT 10")
+    rows = cur.fetchall()
+
+    if not rows:
+        await interaction.response.send_message(
+            "まだランキングデータがないよ。",
+            ephemeral=True
+        )
+        return
+
+    lines = []
+    guild = interaction.guild
+    for i, (user_id, coins) in enumerate(rows, start=1):
+        member = guild.get_member(int(user_id)) if guild else None
+        name = member.display_name if member else f"User {user_id}"
+        lines.append(f"{i}位：{name} - {coins} HPT")
+
+    embed = discord.Embed(
+        title="🏆 HPTランキング",
+        description="\n".join(lines)
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 if __name__ == "__main__":
     try:

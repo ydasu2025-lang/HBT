@@ -46,15 +46,20 @@ def get_user(user_id):
     cur.execute("SELECT coins, last_post FROM users WHERE user_id=?", (str(user_id),))
     row = cur.fetchone()
     if not row:
-        cur.execute("INSERT INTO users (user_id, coins) VALUES (?, 0)", (str(user_id),))
+        cur.execute("INSERT INTO users (user_id, coins, last_post) VALUES (?, 0, 0)", (str(user_id),))
         conn.commit()
         return 0, 0
     return row
 
+def set_coins(user_id, amount):
+    amount = max(0, amount)
+    cur.execute("UPDATE users SET coins=? WHERE user_id=?", (amount, str(user_id)))
+    conn.commit()
+
 def add_coins(user_id, amount):
-    coins, last = get_user(user_id)
-    coins += amount
-    cur.execute("UPDATE users SET coins=? WHERE user_id=?", (coins, str(user_id)))
+    coins, _ = get_user(user_id)
+    new_amount = max(0, coins + amount)
+    cur.execute("UPDATE users SET coins=? WHERE user_id=?", (new_amount, str(user_id)))
     conn.commit()
 
 def set_last_post(user_id):
@@ -71,14 +76,31 @@ async def on_message(message):
     if time.time() - last > 10:
         add_coins(message.author.id, 10)
         set_last_post(message.author.id)
-        await message.channel.send(f"{message.author.display_name} +10HPT")
 
     await bot.process_commands(message)
 
 @bot.command()
 async def balance(ctx):
     coins, _ = get_user(ctx.author.id)
-    await ctx.send(f"{ctx.author.display_name} のコイン: {coins}")
+    await ctx.send(f"💰 {ctx.author.display_name} のHPT: {coins}")
+
+@bot.command()
+async def top(ctx):
+    cur.execute("SELECT user_id, coins FROM users ORDER BY coins DESC LIMIT 10")
+    rows = cur.fetchall()
+
+    if not rows:
+        await ctx.send("まだランキングデータがないよ。")
+        return
+
+    lines = []
+    for i, (user_id, coins) in enumerate(rows, start=1):
+        member = ctx.guild.get_member(int(user_id)) if ctx.guild else None
+        name = member.display_name if member else f"User {user_id}"
+        lines.append(f"{i}位：{name} - {coins} HPT")
+
+    embed = discord.Embed(title="🏆 HPTランキング", description="\n".join(lines))
+    await ctx.send(embed=embed)
 
 GACHA = [
     ("ハズレ犬", "⭐️", 70, "https://picsum.photos/300"),
@@ -99,16 +121,20 @@ async def gacha(ctx):
     coins, _ = get_user(ctx.author.id)
 
     if coins < 50:
-        await ctx.send("HPTが足りない！")
+        await ctx.send("HPTが足りない！50HPT必要です。")
         return
 
     add_coins(ctx.author.id, -50)
 
     name, rarity, img = roll()
 
-    embed = discord.Embed(title="🎰 ガチャ結果")
-    embed.description = f"{rarity}\n{name}"
+    embed = discord.Embed(
+        title="🎰 ガチャ結果",
+        description=f"{rarity}\n**{name}**",
+        color=0xFFD700
+    )
     embed.set_image(url=img)
+    embed.set_footer(text="50HPT消費しました")
 
     await ctx.send(embed=embed)
 

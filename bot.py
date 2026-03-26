@@ -75,18 +75,39 @@ async def on_ready():
     print(f"Logged in as {bot.user} ({bot.user.id})")
 
 @bot.event
-async def on_message(message: discord.Message):
+async def on_message(message):
     if message.author.bot:
         return
 
-    _, last = get_user(message.author.id)
+    # 画像・動画の拡張子
+    allowed_exts = (
+        ".png", ".jpg", ".jpeg", ".gif", ".webp",
+        ".mp4", ".mov", ".webm", ".mkv"
+    )
 
-    if time.time() - last > 10:
-        add_coins(message.author.id, 10)
-        set_last_post(message.author.id)
+    has_media = False
+
+    for attachment in message.attachments:
+        content_type = attachment.content_type or ""
+        filename = attachment.filename.lower()
+
+        if content_type.startswith("image/") or content_type.startswith("video/"):
+            has_media = True
+            break
+
+        if filename.endswith(allowed_exts):
+            has_media = True
+            break
+
+    if has_media:
+        coins, last = get_user(message.author.id)
+
+        if time.time() - last > 10:
+            add_coins(message.author.id, 10)
+            set_last_post(message.author.id)
 
     await bot.process_commands(message)
-
+    
 GACHA = [
     ("みゆ", "⭐️", 70, "https://picsum.photos/300"),
     ("ほのか", "⭐️⭐️", 25, "https://picsum.photos/301"),

@@ -177,7 +177,7 @@ WEEKLY_GACHAS = [
         "type": "normal",
         "start": "2026-03-23 00:00",
         "end": "2026-03-30 00:00",
-        "role_id": 1487114322781143081,  # ←ここをその週のロールIDに変更
+        "role_id": 1487114322781143081,
         "cost": 50,
         "items": [
             ("みゆ", "S", 14, "https://cdn.discordapp.com/attachments/1486776583858425911/1486834490017055010/S.png?ex=69c6f206&is=69c5a086&hm=69ea5c80115bc07d31794aeefad633b5a099eb68336ce3fa79ff63ba8ac83f22&"),

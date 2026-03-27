@@ -194,12 +194,12 @@ async def top(interaction: discord.Interaction):
 async def givehpt(interaction: discord.Interaction, user: discord.Member, amount: int):
 
     # 管理者チェック
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message(
-            "権限がありません。",
-            ephemeral=True
-        )
-        return
+   if not interaction.user.guild_permissions.administrator:
+    await interaction.response.send_message(
+        "権限がありません。",
+        ephemeral=True
+    )
+    return
 if __name__ == "__main__":
     try:
         keep_alive()

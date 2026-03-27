@@ -1,7 +1,7 @@
 from flask import Flask
 import threading
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 import sqlite3
 import random
@@ -41,6 +41,24 @@ CREATE TABLE IF NOT EXISTS users (
     last_post REAL DEFAULT 0
 )
 """)
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS gacha_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    character_name TEXT NOT NULL,
+    rarity TEXT NOT NULL,
+    created_at REAL NOT NULL
+)
+""")
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS bot_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+)
+""")
+
 conn.commit()
 
 def get_user(user_id: int):
@@ -65,6 +83,26 @@ def set_last_post(user_id: int):
     cur.execute("UPDATE users SET last_post=? WHERE user_id=?", (time.time(), str(user_id)))
     conn.commit()
 
+def log_gacha(user_id: int, character_name: str, rarity: str):
+    cur.execute(
+        "INSERT INTO gacha_logs (user_id, character_name, rarity, created_at) VALUES (?, ?, ?, ?)",
+        (str(user_id), character_name, rarity, time.time())
+    )
+    conn.commit()
+
+def get_setting(key: str):
+    cur.execute("SELECT value FROM bot_settings WHERE key=?", (key,))
+    row = cur.fetchone()
+    return row[0] if row else None
+
+def set_setting(key: str, value: str):
+    cur.execute("""
+        INSERT INTO bot_settings (key, value)
+        VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value=excluded.value
+    """, (key, value))
+    conn.commit()
+
 ALLOWED_CHANNEL_IDS = [
     1486774240735789066,
     1486774297505824810,
@@ -81,6 +119,95 @@ ALLOWED_COMMAND_CHANNELS = [
 
 COOLDOWN_SECONDS = 2
 
+# ここを集計を表示したいテキストチャンネルIDに変える
+REPORT_CHANNEL_ID = 1487008334358773842
+
+GACHA = [
+    ("みゆ", "S", 25, "https://cdn.discordapp.com/attachments/1486776583858425911/1486834490017055010/S.png?ex=69c6f206&is=69c5a086&hm=69ea5c80115bc07d31794aeefad633b5a099eb68336ce3fa79ff63ba8ac83f22&"),
+    ("りみ", "S", 25, "https://cdn.discordapp.com/attachments/1486776583858425911/1486840365032935446/S_1.png?ex=69c6f77f&is=69c5a5ff&hm=260cee99ea95db450ce7dc8a71308bb0ae6bc04a0eff5412cae66247c91b5d7d&"),
+    ("さえ", "S", 25, "https://cdn.discordapp.com/attachments/1486863251525603478/1486871101710663770/S_3.png?ex=69c7141f&is=69c5c29f&hm=86c5c46921441db38ca19811c6e693c90fb0227b2046e85f84467e97553c0d2a&"),
+    ("ふうあ", "S", 25, "https://cdn.discordapp.com/attachments/1486863251525603478/1486876158749315155/S_2.png?ex=69c718d5&is=69c5c755&hm=4c361ef76e57c20fc3d8bc99484613366ee32455ecaf2184e6df3c0f36062542&"),
+]
+
+def roll():
+    r = random.randint(1, 100)
+    total = 0
+    for name, rarity, weight, img in GACHA:
+        total += weight
+        if r <= total:
+            return name, rarity, img
+
+def build_report_text():
+    cur.execute("""
+        SELECT COUNT(DISTINCT user_id)
+        FROM gacha_logs
+    """)
+    user_count = cur.fetchone()[0] or 0
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM gacha_logs
+    """)
+    total_count = cur.fetchone()[0] or 0
+
+    cur.execute("""
+        SELECT character_name, COUNT(*)
+        FROM gacha_logs
+        GROUP BY character_name
+        ORDER BY COUNT(*) DESC, character_name ASC
+    """)
+    rows = cur.fetchall()
+
+    lines = [
+        "🎰 ガチャ総合結果",
+        f"総ガチャ回数: {total_count}回",
+        f"ガチャを引いた人数: {user_count}人",
+        ""
+    ]
+
+    if not rows:
+        lines.append("まだデータなし")
+    else:
+        for name, count in rows:
+            lines.append(f"{name}: {count}回")
+
+    lines.append("")
+    lines.append("このメッセージは1時間ごとに自動更新されます。")
+
+    return "\n".join(lines)
+
+async def update_report_message():
+    channel = bot.get_channel(REPORT_CHANNEL_ID)
+    if channel is None:
+        return
+
+    text = build_report_text()
+    saved_message_id = get_setting("report_message_id")
+
+    if saved_message_id:
+        try:
+            message = await channel.fetch_message(int(saved_message_id))
+            await message.edit(content=text)
+            return
+        except discord.NotFound:
+            pass
+        except discord.Forbidden:
+            return
+        except discord.HTTPException:
+            return
+
+    try:
+        new_message = await channel.send(text)
+        set_setting("report_message_id", str(new_message.id))
+    except discord.Forbidden:
+        return
+    except discord.HTTPException:
+        return
+
+@tasks.loop(hours=1)
+async def auto_report_loop():
+    await update_report_message()
+
 @bot.event
 async def on_ready():
     try:
@@ -88,6 +215,14 @@ async def on_ready():
         print(f"Synced {len(synced)} commands")
     except Exception as e:
         print(f"Sync error: {e}")
+
+    if not auto_report_loop.is_running():
+        auto_report_loop.start()
+
+    try:
+        await update_report_message()
+    except Exception as e:
+        print(f"Initial report update error: {e}")
 
     print(f"Logged in as {bot.user} ({bot.user.id})")
 
@@ -125,21 +260,6 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-GACHA = [
-    ("みゆ", "S", 25, "https://cdn.discordapp.com/attachments/1486776583858425911/1486834490017055010/S.png?ex=69c6f206&is=69c5a086&hm=69ea5c80115bc07d31794aeefad633b5a099eb68336ce3fa79ff63ba8ac83f22&"),
-    ("りみ", "S", 25, "https://cdn.discordapp.com/attachments/1486776583858425911/1486840365032935446/S_1.png?ex=69c6f77f&is=69c5a5ff&hm=260cee99ea95db450ce7dc8a71308bb0ae6bc04a0eff5412cae66247c91b5d7d&"),
-    ("さえ", "S", 25, "https://cdn.discordapp.com/attachments/1486863251525603478/1486871101710663770/S_3.png?ex=69c7141f&is=69c5c29f&hm=86c5c46921441db38ca19811c6e693c90fb0227b2046e85f84467e97553c0d2a&"),
-    ("ふうあ", "S", 25, "https://cdn.discordapp.com/attachments/1486863251525603478/1486876158749315155/S_2.png?ex=69c718d5&is=69c5c755&hm=4c361ef76e57c20fc3d8bc99484613366ee32455ecaf2184e6df3c0f36062542&"),
-]
-
-def roll():
-    r = random.randint(1, 100)
-    total = 0
-    for name, rarity, weight, img in GACHA:
-        total += weight
-        if r <= total:
-            return name, rarity, img
-
 @bot.tree.command(name="balance", description="自分のHPTを見る")
 async def balance(interaction: discord.Interaction):
     if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
@@ -176,6 +296,7 @@ async def gacha(interaction: discord.Interaction):
     add_coins(interaction.user.id, -50)
 
     name, rarity, img = roll()
+    log_gacha(interaction.user.id, name, rarity)
 
     embed = discord.Embed(
         title="🎰 ガチャ結果",

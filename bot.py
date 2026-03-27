@@ -168,7 +168,7 @@ async def gacha(interaction: discord.Interaction):
 
     if coins < 50:
         await interaction.response.send_message(
-            f"HPTが足りない！今は {coins} HPT、50HPT必要です。",
+            f"HPTが足りない！今は {coins} HPT、50HPT必要、チャンネルに画像を投稿してHPTをGET",
             ephemeral=True
         )
         return

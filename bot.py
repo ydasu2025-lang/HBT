@@ -65,14 +65,39 @@ def set_last_post(user_id: int):
     cur.execute("UPDATE users SET last_post=? WHERE user_id=?", (time.time(), str(user_id)))
     conn.commit()
 
-ALLOWED_CHANNEL_IDS = [1486774240735789066, 1486774297505824810, 1486774309018931240, 1486774516595032188, 1486775878502584360, 1486877578093658162]
-ALLOWED_COMMAND_CHANNELS = [1486779110758940853, 1486877578093658162]
+ALLOWED_CHANNEL_IDS = [
+    1486774240735789066,
+    1486774297505824810,
+    1486774309018931240,
+    1486774516595032188,
+    1486775878502584360,
+    1486877578093658162
+]
+
+ALLOWED_COMMAND_CHANNELS = [
+    1486779110758940853,
+    1486877578093658162
+]
+
+COOLDOWN_SECONDS = 2
+
+@bot.event
+async def on_ready():
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} commands")
+    except Exception as e:
+        print(f"Sync error: {e}")
+
+    print(f"Logged in as {bot.user} ({bot.user.id})")
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
 
     if message.channel.id not in ALLOWED_CHANNEL_IDS:
+        await bot.process_commands(message)
         return
 
     allowed_exts = (
@@ -92,29 +117,19 @@ async def on_message(message):
             media_count += 1
 
     if media_count > 0:
-        coins, last = get_user(message.author.id)
+        _, last = get_user(message.author.id)
 
-        if time.time() - last > 3:
-            add_coins(message.author.id, media_count * 3)
+        if time.time() - last > COOLDOWN_SECONDS:
+            add_coins(message.author.id, media_count * 10)
             set_last_post(message.author.id)
 
     await bot.process_commands(message)
 
-@bot.event
-async def on_ready():
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} commands")
-    except Exception as e:
-        print(f"Sync error: {e}")
-
-    print(f"Logged in as {bot.user}")
-    
 GACHA = [
     ("みゆ", "S", 25, "https://cdn.discordapp.com/attachments/1486776583858425911/1486834490017055010/S.png?ex=69c6f206&is=69c5a086&hm=69ea5c80115bc07d31794aeefad633b5a099eb68336ce3fa79ff63ba8ac83f22&"),
     ("りみ", "S", 25, "https://cdn.discordapp.com/attachments/1486776583858425911/1486840365032935446/S_1.png?ex=69c6f77f&is=69c5a5ff&hm=260cee99ea95db450ce7dc8a71308bb0ae6bc04a0eff5412cae66247c91b5d7d&"),
     ("さえ", "S", 25, "https://cdn.discordapp.com/attachments/1486863251525603478/1486871101710663770/S_3.png?ex=69c7141f&is=69c5c29f&hm=86c5c46921441db38ca19811c6e693c90fb0227b2046e85f84467e97553c0d2a&"),
-    ("ふうあ", "S",25,"https://cdn.discordapp.com/attachments/1486863251525603478/1486876158749315155/S_2.png?ex=69c718d5&is=69c5c755&hm=4c361ef76e57c20fc3d8bc99484613366ee32455ecaf2184e6df3c0f36062542&"),
+    ("ふうあ", "S", 25, "https://cdn.discordapp.com/attachments/1486863251525603478/1486876158749315155/S_2.png?ex=69c718d5&is=69c5c755&hm=4c361ef76e57c20fc3d8bc99484613366ee32455ecaf2184e6df3c0f36062542&"),
 ]
 
 def roll():
@@ -127,15 +142,13 @@ def roll():
 
 @bot.tree.command(name="balance", description="自分のHPTを見る")
 async def balance(interaction: discord.Interaction):
-
-    
     if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
         await interaction.response.send_message(
             "このコマンドは指定チャンネルで使ってください。",
             ephemeral=True
         )
         return
-        
+
     coins, _ = get_user(interaction.user.id)
     await interaction.response.send_message(
         f"💰 {interaction.user.display_name} のHPT: {coins}",
@@ -144,19 +157,18 @@ async def balance(interaction: discord.Interaction):
 
 @bot.tree.command(name="gacha", description="50HPTでガチャを引く")
 async def gacha(interaction: discord.Interaction):
-
     if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
         await interaction.response.send_message(
             "このコマンドは指定チャンネルで使ってください。",
             ephemeral=True
         )
         return
-        
+
     coins, _ = get_user(interaction.user.id)
 
     if coins < 50:
         await interaction.response.send_message(
-            "HPTが足りない！50HPT必要です。",
+            f"HPTが足りない！今は {coins} HPT、50HPT必要です。",
             ephemeral=True
         )
         return
@@ -177,6 +189,13 @@ async def gacha(interaction: discord.Interaction):
 
 @bot.tree.command(name="top", description="HPTランキングを見る")
 async def top(interaction: discord.Interaction):
+    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
+        await interaction.response.send_message(
+            "このコマンドは指定チャンネルで使ってください。",
+            ephemeral=True
+        )
+        return
+
     cur.execute("SELECT user_id, coins FROM users ORDER BY coins DESC LIMIT 10")
     rows = cur.fetchall()
 
@@ -199,11 +218,10 @@ async def top(interaction: discord.Interaction):
         description="\n".join(lines)
     )
     await interaction.response.send_message(embed=embed, ephemeral=True)
+
 @bot.tree.command(name="givehpt", description="管理者用：ユーザーにHPTを送る")
 @app_commands.describe(user="送り先", amount="送るHPT")
 async def givehpt(interaction: discord.Interaction, user: discord.Member, amount: int):
-
-    # 管理者チェック
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message(
             "権限がありません。",
@@ -211,7 +229,6 @@ async def givehpt(interaction: discord.Interaction, user: discord.Member, amount
         )
         return
 
-    # チャンネル制限
     if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
         await interaction.response.send_message(
             "このコマンドは指定チャンネルで使ってください。",
@@ -219,7 +236,6 @@ async def givehpt(interaction: discord.Interaction, user: discord.Member, amount
         )
         return
 
-    # 数値チェック
     if amount <= 0:
         await interaction.response.send_message(
             "1以上の数値を入力してください。",
@@ -227,14 +243,13 @@ async def givehpt(interaction: discord.Interaction, user: discord.Member, amount
         )
         return
 
-    # 付与
     add_coins(user.id, amount)
 
     await interaction.response.send_message(
         f"💸 {user.display_name} に {amount} HPT付与しました。",
         ephemeral=True
     )
-    return
+
 if __name__ == "__main__":
     try:
         keep_alive()

@@ -99,6 +99,16 @@ async def on_message(message):
             set_last_post(message.author.id)
 
     await bot.process_commands(message)
+
+@bot.event
+async def on_ready():
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} commands")
+    except Exception as e:
+        print(f"Sync error: {e}")
+
+    print(f"Logged in as {bot.user}")
     
 GACHA = [
     ("みゆ", "S", 25, "https://cdn.discordapp.com/attachments/1486776583858425911/1486834490017055010/S.png?ex=69c6f206&is=69c5a086&hm=69ea5c80115bc07d31794aeefad633b5a099eb68336ce3fa79ff63ba8ac83f22&"),

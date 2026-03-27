@@ -194,27 +194,17 @@ async def top(interaction: discord.Interaction):
 async def givehpt(interaction: discord.Interaction, user: discord.Member, amount: int):
 
     # 管理者チェック
-   if not interaction.user.guild_permissions.administrator:
-    await interaction.response.send_message(
-        "権限がありません。",
-        ephemeral=True
-    )
-    return
-if __name__ == "__main__":
-    try:
-        keep_alive()
-        bot.run(TOKEN)
-    except Exception:
-        traceback.print_exc()
-        raise
-
-from discord import app_commands
-
-
-    # 管理者チェック
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message(
             "権限がありません。",
+            ephemeral=True
+        )
+        return
+
+    # チャンネル制限
+    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
+        await interaction.response.send_message(
+            "このコマンドは指定チャンネルで使ってください。",
             ephemeral=True
         )
         return
@@ -234,3 +224,11 @@ from discord import app_commands
         f"💸 {user.display_name} に {amount} HPT付与しました。",
         ephemeral=True
     )
+    return
+if __name__ == "__main__":
+    try:
+        keep_alive()
+        bot.run(TOKEN)
+    except Exception:
+        traceback.print_exc()
+        raise

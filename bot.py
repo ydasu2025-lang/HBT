@@ -94,8 +94,8 @@ async def on_message(message):
     if media_count > 0:
         coins, last = get_user(message.author.id)
 
-        if time.time() - last > 10:
-            add_coins(message.author.id, media_count * 10)
+        if time.time() - last > 3:
+            add_coins(message.author.id, media_count * 3)
             set_last_post(message.author.id)
 
     await bot.process_commands(message)

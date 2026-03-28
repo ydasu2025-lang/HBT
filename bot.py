@@ -232,38 +232,35 @@ def is_image_attachment(attachment: discord.Attachment) -> bool:
 
 def get_instant_match_for_forward(message: discord.Message):
     now = time.time()
-    attachments = message.attachments
-    if len(attachments) != 1:
+
+    if len(message.attachments) != 1:
         return None
 
-    target_filename = attachments[0].filename.lower()
-    target_size = attachments[0].size
+    target_url = message.attachments[0].url
 
     with instant_posts_lock:
-        expired_ids = [mid for mid, data in instant_posts.items() if now - data["created_at"] > INSTANT_POST_LIFETIME]
+        expired_ids = [
+            mid for mid, data in instant_posts.items()
+            if now - data["created_at"] > INSTANT_POST_LIFETIME
+        ]
         for mid in expired_ids:
             instant_posts.pop(mid, None)
 
-        for _, data in instant_posts.items():
+        for mid, data in instant_posts.items():
             if data["author_id"] == message.author.id:
                 continue
+
             if data["forwarded"]:
                 continue
+
             if now - data["created_at"] > INSTANT_POST_LIFETIME:
                 continue
 
-            src_filename = data["filename"].lower()
-            src_size = data["size"]
-
-            if src_filename == target_filename and src_size == target_size:
-                return data
+            # URLの一部で一致判定（これがポイント）
+            if data["url"].split("/")[-1] in target_url:
+                return mid, data
 
     return None
-
-def mark_instant_forwarded(source_message_id: int):
-    with instant_posts_lock:
-        if source_message_id in instant_posts:
-            instant_posts[source_message_id]["forwarded"] = True
 
 ALLOWED_CHANNEL_IDS = [
     1486774240735789066,
@@ -535,32 +532,34 @@ async def remove_expired_completion_roles():
 @tasks.loop(minutes=25)
 async def periodic_cleanup():
     await remove_expired_completion_roles()
-
-async def handle_instant_channel(message: discord.Message):
-    attachments = message.attachments
-
-    if len(attachments) != 1 or not is_image_attachment(attachments[0]) or message.content.strip():
-        try:
-            await message.delete()
-        except discord.HTTPException:
-            pass
-        try:
-            warn = await message.channel.send("ここは画像1枚のみ送信できます。")
-            await warn.delete(delay=5)
-        except discord.HTTPException:
-            pass
+async def handle_forward_channel(message: discord.Message):
+    if not message.content.strip():
         return
 
-    _, last = get_user(message.author.id)
-    if time.time() - last > COOLDOWN_SECONDS:
-        add_coins(message.author.id, INSTANT_REWARD)
-        set_last_post(message.author.id)
+    if len(message.attachments) != 1:
+        return
+
+    if not is_image_attachment(message.attachments[0]):
+        return
+
+    result = get_instant_match_for_forward(message)
+    if result is None:
+        return
+
+    source_id, data = result
+
+    if data["author_id"] == message.author.id:
+        return
+
+    add_coins(message.author.id, FORWARD_REWARD)
+
+    # ここ重要
+    mark_instant_forwarded(source_id)
 
     with instant_posts_lock:
         instant_posts[message.id] = {
             "author_id": message.author.id,
-            "filename": attachments[0].filename,
-            "size": attachments[0].size,
+           "url": attachments[0].url,
             "created_at": time.time(),
             "forwarded": False
         }

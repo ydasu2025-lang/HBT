@@ -176,7 +176,7 @@ WEEKLY_GACHAS = [
         "name": "通常ガチャ 3月4週目",
         "type": "normal",
         "start": "2026-03-23 00:00",
-        "end": "2026-03-30 00:00",
+        "end": "2026-03-31 23:59",
         "role_id": 1487114322781143081,
         "cost": 50,
         "items": [
@@ -522,7 +522,7 @@ async def on_message(message):
         _, last = get_user(message.author.id)
 
         if time.time() - last > COOLDOWN_SECONDS:
-            add_coins(message.author.id, media_count * 10)
+            add_coins(message.author.id, media_count * 25)
             set_last_post(message.author.id)
 
     await bot.process_commands(message)

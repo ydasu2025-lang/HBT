@@ -398,7 +398,7 @@ async def remove_expired_completion_roles():
 
         remove_completion_reward_record(gacha_id, int(user_id))
 
-@tasks.loop(minutes=10)
+@tasks.loop(minutes=25)
 async def periodic_cleanup():
     await remove_expired_completion_roles()
 

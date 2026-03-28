@@ -40,93 +40,114 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 DB_PATH = "/var/data/data.db"
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-cur = conn.cursor()
+db_lock = threading.Lock()
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    user_id TEXT PRIMARY KEY,
-    coins INTEGER DEFAULT 0,
-    last_post REAL DEFAULT 0
-)
-""")
+with db_lock:
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        user_id TEXT PRIMARY KEY,
+        coins INTEGER DEFAULT 0,
+        last_post REAL DEFAULT 0
+    )
+    """)
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS gacha_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT NOT NULL,
-    gacha_id TEXT NOT NULL,
-    gacha_name TEXT NOT NULL,
-    gacha_type TEXT NOT NULL,
-    character_name TEXT NOT NULL,
-    rarity TEXT NOT NULL,
-    created_at REAL NOT NULL
-)
-""")
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS gacha_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        gacha_id TEXT NOT NULL,
+        gacha_name TEXT NOT NULL,
+        gacha_type TEXT NOT NULL,
+        character_name TEXT NOT NULL,
+        rarity TEXT NOT NULL,
+        created_at REAL NOT NULL
+    )
+    """)
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS completion_rewards (
-    gacha_id TEXT NOT NULL,
-    user_id TEXT NOT NULL,
-    awarded_at REAL NOT NULL,
-    PRIMARY KEY (gacha_id, user_id)
-)
-""")
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS completion_rewards (
+        gacha_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        awarded_at REAL NOT NULL,
+        PRIMARY KEY (gacha_id, user_id)
+    )
+    """)
 
-conn.commit()
+    conn.commit()
 
 def get_user(user_id: int):
-    cur.execute("SELECT coins, last_post FROM users WHERE user_id=?", (str(user_id),))
-    row = cur.fetchone()
-    if not row:
-        cur.execute(
-            "INSERT INTO users (user_id, coins, last_post) VALUES (?, 0, 0)",
+    with db_lock:
+        row = conn.execute(
+            "SELECT coins, last_post FROM users WHERE user_id=?",
             (str(user_id),)
-        )
-        conn.commit()
-        return 0, 0
-    return row
+        ).fetchone()
+
+        if not row:
+            conn.execute(
+                "INSERT INTO users (user_id, coins, last_post) VALUES (?, 0, 0)",
+                (str(user_id),)
+            )
+            conn.commit()
+            return 0, 0
+
+        return row
 
 def add_coins(user_id: int, amount: int):
     coins, _ = get_user(user_id)
     new_amount = max(0, coins + amount)
-    cur.execute("UPDATE users SET coins=? WHERE user_id=?", (new_amount, str(user_id)))
-    conn.commit()
+    with db_lock:
+        conn.execute(
+            "UPDATE users SET coins=? WHERE user_id=?",
+            (new_amount, str(user_id))
+        )
+        conn.commit()
 
 def set_last_post(user_id: int):
-    cur.execute("UPDATE users SET last_post=? WHERE user_id=?", (time.time(), str(user_id)))
-    conn.commit()
+    with db_lock:
+        conn.execute(
+            "UPDATE users SET last_post=? WHERE user_id=?",
+            (time.time(), str(user_id))
+        )
+        conn.commit()
 
 def log_gacha(user_id: int, gacha_id: str, gacha_name: str, gacha_type: str, character_name: str, rarity: str):
-    cur.execute(
-        """
-        INSERT INTO gacha_logs (user_id, gacha_id, gacha_name, gacha_type, character_name, rarity, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (str(user_id), gacha_id, gacha_name, gacha_type, character_name, rarity, time.time())
-    )
-    conn.commit()
+    with db_lock:
+        conn.execute(
+            """
+            INSERT INTO gacha_logs (user_id, gacha_id, gacha_name, gacha_type, character_name, rarity, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (str(user_id), gacha_id, gacha_name, gacha_type, character_name, rarity, time.time())
+        )
+        conn.commit()
 
 def add_completion_reward_record(gacha_id: str, user_id: int):
-    cur.execute("""
-        INSERT INTO completion_rewards (gacha_id, user_id, awarded_at)
-        VALUES (?, ?, ?)
-        ON CONFLICT(gacha_id, user_id) DO NOTHING
-    """, (gacha_id, str(user_id), time.time()))
-    conn.commit()
+    with db_lock:
+        conn.execute(
+            """
+            INSERT INTO completion_rewards (gacha_id, user_id, awarded_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(gacha_id, user_id) DO NOTHING
+            """,
+            (gacha_id, str(user_id), time.time())
+        )
+        conn.commit()
 
 def has_completion_reward_record(gacha_id: str, user_id: int) -> bool:
-    cur.execute(
-        "SELECT 1 FROM completion_rewards WHERE gacha_id=? AND user_id=?",
-        (gacha_id, str(user_id))
-    )
-    return cur.fetchone() is not None
+    with db_lock:
+        row = conn.execute(
+            "SELECT 1 FROM completion_rewards WHERE gacha_id=? AND user_id=?",
+            (gacha_id, str(user_id))
+        ).fetchone()
+    return row is not None
 
 def remove_completion_reward_record(gacha_id: str, user_id: int):
-    cur.execute(
-        "DELETE FROM completion_rewards WHERE gacha_id=? AND user_id=?",
-        (gacha_id, str(user_id))
-    )
-    conn.commit()
+    with db_lock:
+        conn.execute(
+            "DELETE FROM completion_rewards WHERE gacha_id=? AND user_id=?",
+            (gacha_id, str(user_id))
+        )
+        conn.commit()
 
 ALLOWED_CHANNEL_IDS = [
     1486774240735789066,
@@ -254,35 +275,44 @@ def get_gacha_unique_total(gacha_def: dict) -> int:
     return len({item[0] for item in gacha_def["items"]})
 
 def get_user_unique_count_for_gacha(user_id: int, gacha_id: str) -> int:
-    cur.execute("""
-        SELECT COUNT(DISTINCT character_name)
-        FROM gacha_logs
-        WHERE user_id=? AND gacha_id=?
-    """, (str(user_id), gacha_id))
-    row = cur.fetchone()
+    with db_lock:
+        row = conn.execute(
+            """
+            SELECT COUNT(DISTINCT character_name)
+            FROM gacha_logs
+            WHERE user_id=? AND gacha_id=?
+            """,
+            (str(user_id), gacha_id)
+        ).fetchone()
     return row[0] if row and row[0] else 0
 
 def get_missing_characters_for_gacha(user_id: int, gacha_def: dict):
-    owned = set()
-    cur.execute("""
-        SELECT DISTINCT character_name
-        FROM gacha_logs
-        WHERE user_id=? AND gacha_id=?
-    """, (str(user_id), gacha_def["id"]))
-    for row in cur.fetchall():
-        owned.add(row[0])
+    with db_lock:
+        rows = conn.execute(
+            """
+            SELECT DISTINCT character_name
+            FROM gacha_logs
+            WHERE user_id=? AND gacha_id=?
+            """,
+            (str(user_id), gacha_def["id"])
+        ).fetchall()
 
+    owned = {row[0] for row in rows}
     all_chars = [item[0] for item in gacha_def["items"]]
     return [name for name in all_chars if name not in owned]
 
 def has_character_for_gacha(user_id: int, gacha_id: str, character_name: str) -> bool:
-    cur.execute("""
-        SELECT 1
-        FROM gacha_logs
-        WHERE user_id=? AND gacha_id=? AND character_name=?
-        LIMIT 1
-    """, (str(user_id), gacha_id, character_name))
-    return cur.fetchone() is not None
+    with db_lock:
+        row = conn.execute(
+            """
+            SELECT 1
+            FROM gacha_logs
+            WHERE user_id=? AND gacha_id=? AND character_name=?
+            LIMIT 1
+            """,
+            (str(user_id), gacha_id, character_name)
+        ).fetchone()
+    return row is not None
 
 def find_item_in_gacha(gacha_def: dict, character_name: str):
     for item in gacha_def["items"]:
@@ -310,21 +340,29 @@ async def trade_normal_character_autocomplete(
 
     return choices[:25]
 
-async def send_gacha_log(user: discord.Member | discord.User, gacha_def: dict, character_name: str, remaining_count: int, action: str = "当てました"):
+async def send_gacha_log(
+    user: discord.Member | discord.User,
+    gacha_def: dict,
+    character_name: str,
+    remaining_count: int,
+    action: str = "当てました"
+):
     channel = bot.get_channel(GACHA_LOG_CHANNEL_ID)
     if channel is None:
         return
 
-    now_text = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
+    now_text = datetime.now(JST).strftime("%m/%d %H:%M")
 
     if remaining_count <= 0:
-        remain_text = "コンプ達成"
+        remain_text = "コンプ"
     else:
-        remain_text = f"残り{remaining_count}種"
+        remain_text = f"残{remaining_count}"
+
+    gacha_name = gacha_def["name"].replace("通常ガチャ ", "").replace("限定ガチャ ", "")
 
     try:
         await channel.send(
-            f"【{now_text}】 {user.display_name} が「{gacha_def['name']}」で {character_name} を{action}｜{remain_text}"
+            f"`{now_text}` {user.display_name}｜{gacha_name}｜{character_name}｜{action}｜{remain_text}"
         )
     except discord.Forbidden:
         pass
@@ -367,9 +405,12 @@ async def award_completion_role_if_needed(interaction_or_member, gacha_def: dict
 async def remove_expired_completion_roles():
     all_gachas = WEEKLY_GACHAS + LIMITED_GACHAS
     active_ids = {g["id"] for g in all_gachas if is_gacha_active(g)}
-    cur.execute("SELECT gacha_id, user_id FROM completion_rewards")
-    reward_rows = cur.fetchall()
     gacha_map = {g["id"]: g for g in all_gachas}
+
+    with db_lock:
+        reward_rows = conn.execute(
+            "SELECT gacha_id, user_id FROM completion_rewards"
+        ).fetchall()
 
     for gacha_id, user_id in reward_rows:
         if gacha_id in active_ids:
@@ -447,7 +488,6 @@ async def on_message(message):
 
     if media_count > 0:
         _, last = get_user(message.author.id)
-
         if time.time() - last > COOLDOWN_SECONDS:
             add_coins(message.author.id, media_count * 25)
             set_last_post(message.author.id)
@@ -504,7 +544,7 @@ async def gacha(interaction: discord.Interaction):
     missing = get_missing_characters_for_gacha(interaction.user.id, gacha_def)
     complete_role = await award_completion_role_if_needed(interaction, gacha_def)
 
-    await send_gacha_log(interaction.user, gacha_def, name, len(missing), "当てました")
+    await send_gacha_log(interaction.user, gacha_def, name, len(missing), "ガチャ")
 
     embed = discord.Embed(
         title=f"🎰 {gacha_def['name']} 結果",
@@ -578,7 +618,7 @@ async def trade_normal(interaction: discord.Interaction, character: str):
     missing = get_missing_characters_for_gacha(interaction.user.id, gacha_def)
     complete_role = await award_completion_role_if_needed(interaction, gacha_def)
 
-    await send_gacha_log(interaction.user, gacha_def, name, len(missing), "交換しました")
+    await send_gacha_log(interaction.user, gacha_def, name, len(missing), "交換")
 
     embed = discord.Embed(
         title=f"🛒 {gacha_def['name']} 交換結果",
@@ -658,7 +698,7 @@ async def limitedgacha(interaction: discord.Interaction, event_id: str | None = 
     missing = get_missing_characters_for_gacha(interaction.user.id, gacha_def)
     complete_role = await award_completion_role_if_needed(interaction, gacha_def)
 
-    await send_gacha_log(interaction.user, gacha_def, name, len(missing), "当てました")
+    await send_gacha_log(interaction.user, gacha_def, name, len(missing), "ガチャ")
 
     embed = discord.Embed(
         title=f"🎰 {gacha_def['name']} 結果",
@@ -773,8 +813,10 @@ async def top(interaction: discord.Interaction):
         )
         return
 
-    cur.execute("SELECT user_id, coins FROM users ORDER BY coins DESC LIMIT 10")
-    rows = cur.fetchall()
+    with db_lock:
+        rows = conn.execute(
+            "SELECT user_id, coins FROM users ORDER BY coins DESC LIMIT 10"
+        ).fetchall()
 
     if not rows:
         await interaction.response.send_message(

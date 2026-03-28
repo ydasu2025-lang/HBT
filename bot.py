@@ -36,7 +36,7 @@ GACHA_LOG_CHANNEL_ID = 1487008334358773842
 
 # ここを設定
 INSTANT_IMAGE_CHANNEL_ID = 1487497896000618507
-FORWARD_CHANNEL_ID = 21487497933632045276
+FORWARD_CHANNEL_ID = 1487497933632045276
 
 # リンクを許可するチャンネルID
 ALLOWED_LINK_CHANNEL_IDS = [
@@ -261,6 +261,11 @@ def get_instant_match_for_forward(message: discord.Message):
                 return mid, data
 
     return None
+
+def mark_instant_forwarded(source_message_id:: int):
+    with instant_posts_lock:
+        if source_message_id in instant_posts:
+            instant_posts[source_mmesssage_id]["forwarded"]= True
 
 ALLOWED_CHANNEL_IDS = [
     1486774240735789066,
@@ -532,6 +537,8 @@ async def remove_expired_completion_roles():
 @tasks.loop(minutes=25)
 async def periodic_cleanup():
     await remove_expired_completion_roles()
+
+async def handle_instant_channel(message: discord.Message):
 async def handle_forward_channel(message: discord.Message):
     if not message.content.strip():
         return
@@ -556,6 +563,11 @@ async def handle_forward_channel(message: discord.Message):
     # ここ重要
     mark_instant_forwarded(source_id)
 
+    try:
+        await message.add_reaction("〇")
+    except:
+        pass
+        
     with instant_posts_lock:
         instant_posts[message.id] = {
             "author_id": message.author.id,
@@ -568,32 +580,6 @@ async def handle_forward_channel(message: discord.Message):
         await message.delete(delay=INSTANT_POST_LIFETIME)
     except discord.HTTPException:
         pass
-
-async def handle_forward_channel(message: discord.Message):
-    if not message.content.strip():
-        return
-
-    if len(message.attachments) != 1:
-        return
-
-    if not is_image_attachment(message.attachments[0]):
-        return
-
-    matched = get_instant_match_for_forward(message)
-    if matched is None:
-        return
-
-    if matched["author_id"] == message.author.id:
-        return
-
-    add_coins(message.author.id, FORWARD_REWARD)
-    mark_instant_forwarded(message.id if False else next(
-        mid for mid, data in instant_posts.items()
-        if data["author_id"] == matched["author_id"]
-        and data["filename"] == matched["filename"]
-        and data["size"] == matched["size"]
-        and data["created_at"] == matched["created_at"]
-    ))
 
 @bot.event
 async def on_ready():

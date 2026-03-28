@@ -1,4 +1,4 @@
-from flask import Flask
+import hashlib
 import threading
 import discord
 from discord.ext import commands, tasks
@@ -11,6 +11,7 @@ import traceback
 import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from flask import Flask
 
 app = Flask("")
 
@@ -40,7 +41,7 @@ FORWARD_CHANNEL_ID = 1487497933632045276
 
 # リンクを許可するチャンネルID
 ALLOWED_LINK_CHANNEL_IDS = [
-    21487497933632045276,
+    FORWARD_CHANNEL_ID,
     1486779110758940853,
     1486877578093658162,
     1486844371340099646,
@@ -58,7 +59,7 @@ ALLOWED_LINK_CHANNEL_IDS = [
     1487125777743872061,
     1487428176148693134,
     1487135455261757533,
-    1487337446189563934 
+    1487337446189563934
 ]
 
 intents = discord.Intents.default()
@@ -230,13 +231,91 @@ def is_image_attachment(attachment: discord.Attachment) -> bool:
         return True
     return False
 
-def get_instant_match_for_forward(message: discord.Message):
+async def get_attachment_hash(attachment: discord.Attachment) -> str:
+    data = await attachment.read()
+    return hashlib.sha256(data).hexdigest()
+
+def get_message_reference_id(message: discord.Message):
+    if message.reference and message.reference.message_id:
+        return message.reference.message_id
+    return None
+
+def extract_embed_related_message_id(message: discord.Message):
+    # Discordの転送表示や参照表示で埋め込みにURLが入る場合の保険
+    for embed in message.embeds:
+        values = [
+            getattr(embed, "url", None),
+            getattr(embed, "title", None),
+            getattr(embed, "description", None),
+        ]
+        footer = getattr(embed, "footer", None)
+        if footer and getattr(footer, "text", None):
+            values.append(footer.text)
+        author = getattr(embed, "author", None)
+        if author and getattr(author, "url", None):
+            values.append(author.url)
+
+        for value in values:
+            if not value:
+                continue
+            m = re.search(r"/channels/\d+/(\d+)/(\d+)", str(value))
+            if m:
+                return int(m.group(2))
+    return None
+
+def mark_instant_forwarded(source_message_id: int):
+    with instant_posts_lock:
+        if source_message_id in instant_posts:
+            instant_posts[source_message_id]["forwarded"] = True
+
+def get_active_instant_post_by_message_id(source_message_id: int):
+    now = time.time()
+    with instant_posts_lock:
+        expired_ids = [
+            mid for mid, data in instant_posts.items()
+            if now - data["created_at"] > INSTANT_POST_LIFETIME
+        ]
+        for mid in expired_ids:
+            instant_posts.pop(mid, None)
+
+        data = instant_posts.get(source_message_id)
+        if not data:
+            return None
+
+        if now - data["created_at"] > INSTANT_POST_LIFETIME:
+            instant_posts.pop(source_message_id, None)
+            return None
+
+        if data["forwarded"]:
+            return None
+
+        return source_message_id, data
+
+async def get_instant_match_for_forward(message: discord.Message):
     now = time.time()
 
+    # 1. 標準転送や返信参照の判定
+    ref_id = get_message_reference_id(message)
+    if ref_id is not None:
+        result = get_active_instant_post_by_message_id(ref_id)
+        if result is not None:
+            return result
+
+    # 2. 埋め込み内の参照URLから判定
+    embed_ref_id = extract_embed_related_message_id(message)
+    if embed_ref_id is not None:
+        result = get_active_instant_post_by_message_id(embed_ref_id)
+        if result is not None:
+            return result
+
+    # 3. 画像貼り直し判定
     if len(message.attachments) != 1:
         return None
 
-    target_url = message.attachments[0].url
+    if not is_image_attachment(message.attachments[0]):
+        return None
+
+    target_hash = await get_attachment_hash(message.attachments[0])
 
     with instant_posts_lock:
         expired_ids = [
@@ -249,23 +328,14 @@ def get_instant_match_for_forward(message: discord.Message):
         for mid, data in instant_posts.items():
             if data["author_id"] == message.author.id:
                 continue
-
             if data["forwarded"]:
                 continue
-
             if now - data["created_at"] > INSTANT_POST_LIFETIME:
                 continue
-
-            # URLの一部で一致判定（これがポイント）
-            if data["url"].split("/")[-1] in target_url:
+            if data["hash"] == target_hash:
                 return mid, data
 
     return None
-
-def mark_instant_forwarded(source_message_id: int):
-    with instant_posts_lock:
-        if source_message_id in instant_posts:
-            instant_posts[source_messsage_id]["forwarded"]= True
 
 ALLOWED_CHANNEL_IDS = [
     1486774240735789066,
@@ -282,7 +352,7 @@ ALLOWED_COMMAND_CHANNELS = [
 ]
 
 COOLDOWN_SECONDS = 2
-TRADE_COST = 700
+TRADE_COST = 350
 
 WEEKLY_GACHAS = [
     {
@@ -544,37 +614,33 @@ async def handle_instant_channel(message: discord.Message):
     if len(attachments) != 1 or not is_image_attachment(attachments[0]) or message.content.strip():
         try:
             await message.delete()
-        except:
+        except discord.HTTPException:
             pass
         return
 
     add_coins(message.author.id, INSTANT_REWARD)
 
+    file_hash = await get_attachment_hash(attachments[0])
+
     with instant_posts_lock:
         instant_posts[message.id] = {
             "author_id": message.author.id,
-            "url": attachments[0].url,
+            "hash": file_hash,
             "created_at": time.time(),
             "forwarded": False
         }
 
     try:
         await message.delete(delay=INSTANT_POST_LIFETIME)
-    except:
+    except discord.HTTPException:
         pass
-
 
 async def handle_forward_channel(message: discord.Message):
     if not message.content.strip():
         return
 
-    if len(message.attachments) != 1:
-        return
-
-    if not is_image_attachment(message.attachments[0]):
-        return
-
-    result = get_instant_match_for_forward(message)
+    # 標準転送 / 再投稿の両対応
+    result = await get_instant_match_for_forward(message)
     if result is None:
         return
 
@@ -584,25 +650,11 @@ async def handle_forward_channel(message: discord.Message):
         return
 
     add_coins(message.author.id, FORWARD_REWARD)
-
     mark_instant_forwarded(source_id)
 
     try:
         await message.add_reaction("💰")
-    except:
-        pass
-        
-    with instant_posts_lock:
-        instant_posts[message.id] = {
-            "author_id": message.author.id,
-           "url": attachments[0].url,
-            "created_at": time.time(),
-            "forwarded": False
-        }
-
-    try:
-        await message.delete(delay=INSTANT_POST_LIFETIME)
-    except discord.HTTPException:
+    except Exception:
         pass
 
 @bot.event
@@ -628,7 +680,6 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # リンク禁止
     if message.channel.id not in ALLOWED_LINK_CHANNEL_IDS and has_disallowed_link(message.content):
         try:
             await message.delete()
@@ -641,13 +692,11 @@ async def on_message(message):
             pass
         return
 
-    # 一瞬ch
     if message.channel.id == INSTANT_IMAGE_CHANNEL_ID:
         await handle_instant_channel(message)
         await bot.process_commands(message)
         return
 
-    # 転送先ch
     if message.channel.id == FORWARD_CHANNEL_ID:
         await handle_forward_channel(message)
         await bot.process_commands(message)
@@ -762,7 +811,7 @@ async def gacha(interaction: discord.Interaction):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="trade_normal", description="通常ガチャの未所持キャラを700HPTで交換")
+@bot.tree.command(name="trade_normal", description="通常ガチャの未所持キャラを350HPTで交換")
 @app_commands.describe(character="交換したいキャラ")
 @app_commands.autocomplete(character=trade_normal_character_autocomplete)
 async def trade_normal(interaction: discord.Interaction, character: str):

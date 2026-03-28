@@ -246,7 +246,7 @@ ALLOWED_COMMAND_CHANNELS = [
 ]
 
 COOLDOWN_SECONDS = 2
-TRADE_COST = 700
+TRADE_COST = 350
 
 WEEKLY_GACHAS = [
     {
@@ -727,7 +727,7 @@ async def gacha(interaction: discord.Interaction):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="trade_normal", description="通常ガチャの未所持キャラを700HPTで交換")
+@bot.tree.command(name="trade_normal", description="通常ガチャの未所持キャラを350HPTで交換")
 @app_commands.describe(character="交換したいキャラ")
 @app_commands.autocomplete(character=trade_normal_character_autocomplete)
 async def trade_normal(interaction: discord.Interaction, character: str):

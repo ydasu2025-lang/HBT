@@ -204,13 +204,13 @@ WEEKLY_GACHAS = [
             ("[011]いずみ", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487368081713139762/S_8.png?ex=69c8e2f8&is=69c79178&hm=f553457f674fb636c9752f9cc2a9f8d9cc7e66f560bf252c5debce9aebc67a92&"),
             ("[012]りの", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487368174986068038/S_10.png?ex=69c8e30e&is=69c7918e&hm=74f951b0d28e0b65cf967fc7c3f7ef5cc3d7e46cf81cc93b8228e2e33b92c0a0&"),
             ("[013]えこ", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487367858353602590/S_11.png?ex=69c8e2c3&is=69c79143&hm=d406fea98b8057885afad5feabcaa2dcbe0e5cce9ca1f5fbd4ce777585e3d458&"),
-            ("[014]あん", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487375652788244530/S_13.png?ex=69c8ea05&is=69c79885&hm=998df520f512184e96b419161de24c4f13a5ed1566479fa684019dd6a22c8b18&"),
-            ("[015]ひめの", "A", 10, ""),
-            ("[016]キャラF", "S", 10, "画像URL6"),
-            ("[017]キャラG", "S", 10, "画像URL7"),
-            ("[018]キャラH", "S", 10, "画像URL8"),
-            ("[019]キャラI", "B", 10, "画像URL9"),
-            ("[020]キャラJ", "A", 10, "画像URL10")
+            ("[014]ひめの", "A", 10, ""),
+            ("[015]こころ", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487447816552059081/S_15.png?ex=69c92d3a&is=69c7dbba&hm=f5048d16a6b97f40fe63ecaa31d4ecc0f1eff9c12554851e860c038081141c6e&"),
+            ("[016]るな", "B", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487449389210534098/S_16.png?ex=69c92eb1&is=69c7dd31&hm=3b4cd4af128b40cba0d7dfda325369f2fa7ae2bc8b6a44bd4e8255b9365b8b2c&"),
+            ("[017]れんか", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487450960086306876/S_18.png?ex=69c93028&is=69c7dea8&hm=49f451a350f7a7d2d562257979458e7fa27a1049033d61b904fc82f9d01b7752&"),
+            ("[018]こころ", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487451045746704414/S_19.png?ex=69c9303c&is=69c7debc&hm=cc6a07a5ba4c3c9253ce63cfd182ce52457bf3fb5292a129e263e0d6c1d0da4d&"),
+            ("[019]りおな", "A", 10, "https://media.discordapp.net/attachments/1486776583858425911/1487452783593390212/S_20.png?ex=69c931db&is=69c7e05b&hm=c74ea535a34b97eb9f22013a23399ce7d60b6271cfd8d2ef610df0df7336a350&=&format=webp&quality=lossless&width=660&height=930"),
+            ("[020]まさき", "A", 10, "https://media.discordapp.net/attachments/1486776583858425911/1487453938679550022/S_21.png?ex=69c932ee&is=69c7e16e&hm=b1d545dbf779be9e2104c94fd8d1b462946cf241db01b1c831d9ade9f4bcf153&=&format=webp&quality=lossless&width=660&height=930")
         ]
     }
 ]

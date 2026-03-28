@@ -170,6 +170,27 @@ WEEKLY_GACHAS = [
             ("[010]みう", "A", 15, "https://cdn.discordapp.com/attachments/1486776583858425911/1487150273628733522/image.png?ex=69c8181f&is=69c6c69f&hm=3cbbafe3e43be3970fb7cde3f10d4670acb7eb8c699396cf069ba789e00417ab&")
         ]
     }
+    {
+        "id": "normal_2026_w14",
+        "name": "通常ガチャ 4月1週目",
+        "type": "normal",
+        "start": "2026-04-01 00:00",
+        "end": "2026-04-07 00:00",
+        "role_id": 1487365710035292252,
+        "cost": 50,
+        "items": [
+        ("[011]いずみ", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487368081713139762/S_8.png?ex=69c8e2f8&is=69c79178&hm=f553457f674fb636c9752f9cc2a9f8d9cc7e66f560bf252c5debce9aebc67a92&"),
+        ("[012]りの", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487368174986068038/S_10.png?ex=69c8e30e&is=69c7918e&hm=74f951b0d28e0b65cf967fc7c3f7ef5cc3d7e46cf81cc93b8228e2e33b92c0a0&"),
+        ("[013]えこ", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487367858353602590/S_11.png?ex=69c8e2c3&is=69c79143&hm=d406fea98b8057885afad5feabcaa2dcbe0e5cce9ca1f5fbd4ce777585e3d458&"),
+        ("[014]キャラD", "S", 10, "画像URL4"),
+        ("[005]キャラE", "S", 10, "画像URL5"),
+        ("[006]キャラF", "S", 10, "画像URL6"),
+        ("[007]キャラG", "S", 10, "画像URL7"),
+        ("[008]キャラH", "S", 10, "画像URL8"),
+        ("[009]キャラI", "B", 10, "画像URL9"),
+        ("[010]キャラJ", "A", 10, "画像URL10")
+    ]
+}
 ]
 
 LIMITED_GACHAS = [

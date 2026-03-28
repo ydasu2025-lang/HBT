@@ -8,6 +8,7 @@ import random
 import time
 import os
 import traceback
+import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -33,6 +34,33 @@ JST = ZoneInfo("Asia/Tokyo")
 # ログ用チャンネルID
 GACHA_LOG_CHANNEL_ID = 1487008334358773842
 
+# ここを設定
+INSTANT_IMAGE_CHANNEL_ID = 1487497896000618507
+FORWARD_CHANNEL_ID = 21487497933632045276
+
+# リンクを許可するチャンネルID
+ALLOWED_LINK_CHANNEL_IDS = [
+    21487497933632045276,
+    1486779110758940853,
+    1486877578093658162,
+    1486844371340099646,
+    1487129297125642453,
+    1486767380054016042,
+    1486768643445489815,
+    1486770075896905859,
+    1486778385194811656,
+    1486992052934807604,
+    1487135231273337034,
+    1486774516595032188,
+    1486775935570022501,
+    1487502545357111549,
+    1486842434666369105,
+    1487125777743872061,
+    1487428176148693134,
+    1487135455261757533,
+    1487337446189563934 
+]
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
@@ -41,6 +69,24 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 DB_PATH = "/var/data/data.db"
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 db_lock = threading.Lock()
+
+recent_action_lock = threading.Lock()
+recent_actions = {}
+ACTION_DEDUP_SECONDS = 3.0
+
+# 一瞬chの15秒追跡
+instant_posts_lock = threading.Lock()
+instant_posts = {}
+INSTANT_POST_LIFETIME = 15
+INSTANT_REWARD = 10
+FORWARD_REWARD = 10
+
+LINK_PATTERNS = [
+    r"https?://",
+    r"www\.",
+    r"discord\.gg/",
+    r"discord\.com/invite/"
+]
 
 with db_lock:
     conn.execute("""
@@ -74,6 +120,22 @@ with db_lock:
     """)
 
     conn.commit()
+
+def check_and_mark_recent_action(user_id: int, action_name: str) -> bool:
+    now = time.time()
+    key = (user_id, action_name)
+
+    with recent_action_lock:
+        old_keys = [k for k, ts in recent_actions.items() if now - ts > ACTION_DEDUP_SECONDS]
+        for k in old_keys:
+            recent_actions.pop(k, None)
+
+        last_ts = recent_actions.get(key)
+        if last_ts is not None and now - last_ts < ACTION_DEDUP_SECONDS:
+            return False
+
+        recent_actions[key] = now
+        return True
 
 def get_user(user_id: int):
     with db_lock:
@@ -149,6 +211,60 @@ def remove_completion_reward_record(gacha_id: str, user_id: int):
         )
         conn.commit()
 
+def has_disallowed_link(text: str) -> bool:
+    if not text:
+        return False
+    for pattern in LINK_PATTERNS:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            return True
+    return False
+
+def is_image_attachment(attachment: discord.Attachment) -> bool:
+    content_type = attachment.content_type or ""
+    filename = attachment.filename.lower()
+    image_exts = (".png", ".jpg", ".jpeg", ".gif", ".webp")
+
+    if content_type.startswith("image/"):
+        return True
+    if filename.endswith(image_exts):
+        return True
+    return False
+
+def get_instant_match_for_forward(message: discord.Message):
+    now = time.time()
+    attachments = message.attachments
+    if len(attachments) != 1:
+        return None
+
+    target_filename = attachments[0].filename.lower()
+    target_size = attachments[0].size
+
+    with instant_posts_lock:
+        expired_ids = [mid for mid, data in instant_posts.items() if now - data["created_at"] > INSTANT_POST_LIFETIME]
+        for mid in expired_ids:
+            instant_posts.pop(mid, None)
+
+        for _, data in instant_posts.items():
+            if data["author_id"] == message.author.id:
+                continue
+            if data["forwarded"]:
+                continue
+            if now - data["created_at"] > INSTANT_POST_LIFETIME:
+                continue
+
+            src_filename = data["filename"].lower()
+            src_size = data["size"]
+
+            if src_filename == target_filename and src_size == target_size:
+                return data
+
+    return None
+
+def mark_instant_forwarded(source_message_id: int):
+    with instant_posts_lock:
+        if source_message_id in instant_posts:
+            instant_posts[source_message_id]["forwarded"] = True
+
 ALLOWED_CHANNEL_IDS = [
     1486774240735789066,
     1486774297505824810,
@@ -164,11 +280,7 @@ ALLOWED_COMMAND_CHANNELS = [
 ]
 
 COOLDOWN_SECONDS = 2
-TRADE_COST = 350
-
-# =========================================
-# ここを編集して使う
-# =========================================
+TRADE_COST = 700
 
 WEEKLY_GACHAS = [
     {
@@ -204,37 +316,18 @@ WEEKLY_GACHAS = [
             ("[011]いずみ", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487368081713139762/S_8.png?ex=69c8e2f8&is=69c79178&hm=f553457f674fb636c9752f9cc2a9f8d9cc7e66f560bf252c5debce9aebc67a92&"),
             ("[012]りの", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487368174986068038/S_10.png?ex=69c8e30e&is=69c7918e&hm=74f951b0d28e0b65cf967fc7c3f7ef5cc3d7e46cf81cc93b8228e2e33b92c0a0&"),
             ("[013]えこ", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487367858353602590/S_11.png?ex=69c8e2c3&is=69c79143&hm=d406fea98b8057885afad5feabcaa2dcbe0e5cce9ca1f5fbd4ce777585e3d458&"),
-            ("[014]ひめの", "A", 10, ""),
-            ("[015]こころ", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487447816552059081/S_15.png?ex=69c92d3a&is=69c7dbba&hm=f5048d16a6b97f40fe63ecaa31d4ecc0f1eff9c12554851e860c038081141c6e&"),
-            ("[016]るな", "B", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487449389210534098/S_16.png?ex=69c92eb1&is=69c7dd31&hm=3b4cd4af128b40cba0d7dfda325369f2fa7ae2bc8b6a44bd4e8255b9365b8b2c&"),
-            ("[017]れんか", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487450960086306876/S_18.png?ex=69c93028&is=69c7dea8&hm=49f451a350f7a7d2d562257979458e7fa27a1049033d61b904fc82f9d01b7752&"),
-            ("[018]こころ", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487451045746704414/S_19.png?ex=69c9303c&is=69c7debc&hm=cc6a07a5ba4c3c9253ce63cfd182ce52457bf3fb5292a129e263e0d6c1d0da4d&"),
-            ("[019]りおな", "A", 10, "https://media.discordapp.net/attachments/1486776583858425911/1487452783593390212/S_20.png?ex=69c931db&is=69c7e05b&hm=c74ea535a34b97eb9f22013a23399ce7d60b6271cfd8d2ef610df0df7336a350&=&format=webp&quality=lossless&width=660&height=930"),
-            ("[020]まさき", "A", 10, "https://media.discordapp.net/attachments/1486776583858425911/1487453938679550022/S_21.png?ex=69c932ee&is=69c7e16e&hm=b1d545dbf779be9e2104c94fd8d1b462946cf241db01b1c831d9ade9f4bcf153&=&format=webp&quality=lossless&width=660&height=930")
+            ("[014]あん", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487375652788244530/S_13.png?ex=69c8ea05&is=69c79885&hm=998df520f512184e96b419161de24c4f13a5ed1566479fa684019dd6a22c8b18&"),
+            ("[015]ひめの", "A", 10, ""),
+            ("[016]キャラF", "S", 10, "画像URL6"),
+            ("[017]キャラG", "S", 10, "画像URL7"),
+            ("[018]キャラH", "S", 10, "画像URL8"),
+            ("[019]キャラI", "B", 10, "画像URL9"),
+            ("[020]キャラJ", "A", 10, "画像URL10")
         ]
     }
 ]
 
-LIMITED_GACHAS = [
-    # 例:
-    # {
-    #     "id": "limited_2026_april",
-    #     "name": "4月限定ガチャ",
-    #     "type": "limited",
-    #     "start": "2026-04-01 00:00",
-    #     "end": "2026-04-30 23:59",
-    #     "role_id": 123456789012345678,
-    #     "cost": 50,
-    #     "items": [
-    #         ("限定A", "S", 50, "画像URL"),
-    #         ("限定B", "S", 50, "画像URL")
-    #     ]
-    # }
-]
-
-# =========================================
-# ここから下は基本そのまま
-# =========================================
+LIMITED_GACHAS = []
 
 def now_jst():
     return datetime.now(JST)
@@ -345,7 +438,7 @@ async def send_gacha_log(
     gacha_def: dict,
     character_name: str,
     remaining_count: int,
-    action: str = "当てました"
+    action: str
 ):
     channel = bot.get_channel(GACHA_LOG_CHANNEL_ID)
     if channel is None:
@@ -443,6 +536,66 @@ async def remove_expired_completion_roles():
 async def periodic_cleanup():
     await remove_expired_completion_roles()
 
+async def handle_instant_channel(message: discord.Message):
+    attachments = message.attachments
+
+    if len(attachments) != 1 or not is_image_attachment(attachments[0]) or message.content.strip():
+        try:
+            await message.delete()
+        except discord.HTTPException:
+            pass
+        try:
+            warn = await message.channel.send("ここは画像1枚のみ送信できます。")
+            await warn.delete(delay=5)
+        except discord.HTTPException:
+            pass
+        return
+
+    _, last = get_user(message.author.id)
+    if time.time() - last > COOLDOWN_SECONDS:
+        add_coins(message.author.id, INSTANT_REWARD)
+        set_last_post(message.author.id)
+
+    with instant_posts_lock:
+        instant_posts[message.id] = {
+            "author_id": message.author.id,
+            "filename": attachments[0].filename,
+            "size": attachments[0].size,
+            "created_at": time.time(),
+            "forwarded": False
+        }
+
+    try:
+        await message.delete(delay=INSTANT_POST_LIFETIME)
+    except discord.HTTPException:
+        pass
+
+async def handle_forward_channel(message: discord.Message):
+    if not message.content.strip():
+        return
+
+    if len(message.attachments) != 1:
+        return
+
+    if not is_image_attachment(message.attachments[0]):
+        return
+
+    matched = get_instant_match_for_forward(message)
+    if matched is None:
+        return
+
+    if matched["author_id"] == message.author.id:
+        return
+
+    add_coins(message.author.id, FORWARD_REWARD)
+    mark_instant_forwarded(message.id if False else next(
+        mid for mid, data in instant_posts.items()
+        if data["author_id"] == matched["author_id"]
+        and data["filename"] == matched["filename"]
+        and data["size"] == matched["size"]
+        and data["created_at"] == matched["created_at"]
+    ))
+
 @bot.event
 async def on_ready():
     try:
@@ -464,6 +617,31 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     if message.author.bot:
+        return
+
+    # リンク禁止
+    if message.channel.id not in ALLOWED_LINK_CHANNEL_IDS and has_disallowed_link(message.content):
+        try:
+            await message.delete()
+        except discord.HTTPException:
+            pass
+        try:
+            warn = await message.channel.send("リンクは指定チャンネル以外では送信できません。")
+            await warn.delete(delay=5)
+        except discord.HTTPException:
+            pass
+        return
+
+    # 一瞬ch
+    if message.channel.id == INSTANT_IMAGE_CHANNEL_ID:
+        await handle_instant_channel(message)
+        await bot.process_commands(message)
+        return
+
+    # 転送先ch
+    if message.channel.id == FORWARD_CHANNEL_ID:
+        await handle_forward_channel(message)
+        await bot.process_commands(message)
         return
 
     if message.channel.id not in ALLOWED_CHANNEL_IDS:
@@ -518,6 +696,13 @@ async def gacha(interaction: discord.Interaction):
         )
         return
 
+    if not check_and_mark_recent_action(interaction.user.id, "gacha"):
+        await interaction.response.send_message(
+            "処理中です。少し待ってからもう一度試してください。",
+            ephemeral=True
+        )
+        return
+
     gacha_def = get_active_weekly_gacha()
     if gacha_def is None:
         await interaction.response.send_message(
@@ -568,13 +753,20 @@ async def gacha(interaction: discord.Interaction):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="trade_normal", description="通常ガチャの未所持キャラを350HPTで交換")
+@bot.tree.command(name="trade_normal", description="通常ガチャの未所持キャラを700HPTで交換")
 @app_commands.describe(character="交換したいキャラ")
 @app_commands.autocomplete(character=trade_normal_character_autocomplete)
 async def trade_normal(interaction: discord.Interaction, character: str):
     if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
         await interaction.response.send_message(
             "このコマンドは指定チャンネルで使ってください。",
+            ephemeral=True
+        )
+        return
+
+    if not check_and_mark_recent_action(interaction.user.id, "trade_normal"):
+        await interaction.response.send_message(
+            "処理中です。少し待ってからもう一度試してください。",
             ephemeral=True
         )
         return
@@ -648,6 +840,13 @@ async def limitedgacha(interaction: discord.Interaction, event_id: str | None = 
     if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
         await interaction.response.send_message(
             "このコマンドは指定チャンネルで使ってください。",
+            ephemeral=True
+        )
+        return
+
+    if not check_and_mark_recent_action(interaction.user.id, "limitedgacha"):
+        await interaction.response.send_message(
+            "処理中です。少し待ってからもう一度試してください。",
             ephemeral=True
         )
         return

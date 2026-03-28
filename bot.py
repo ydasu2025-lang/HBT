@@ -164,7 +164,7 @@ ALLOWED_COMMAND_CHANNELS = [
 ]
 
 COOLDOWN_SECONDS = 2
-TRADE_COST = 700
+TRADE_COST = 350
 
 # =========================================
 # ここを編集して使う

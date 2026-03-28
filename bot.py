@@ -262,10 +262,10 @@ def get_instant_match_for_forward(message: discord.Message):
 
     return None
 
-def mark_instant_forwarded(source_message_id:: int):
+def mark_instant_forwarded(source_message_id: int):
     with instant_posts_lock:
         if source_message_id in instant_posts:
-            instant_posts[source_mmesssage_id]["forwarded"]= True
+            instant_posts[source_messsage_id]["forwarded"]= True
 
 ALLOWED_CHANNEL_IDS = [
     1486774240735789066,
@@ -539,6 +539,31 @@ async def periodic_cleanup():
     await remove_expired_completion_roles()
 
 async def handle_instant_channel(message: discord.Message):
+    attachments = message.attachments
+
+    if len(attachments) != 1 or not is_image_attachment(attachments[0]) or message.content.strip():
+        try:
+            await message.delete()
+        except:
+            pass
+        return
+
+    add_coins(message.author.id, INSTANT_REWARD)
+
+    with instant_posts_lock:
+        instant_posts[message.id] = {
+            "author_id": message.author.id,
+            "url": attachments[0].url,
+            "created_at": time.time(),
+            "forwarded": False
+        }
+
+    try:
+        await message.delete(delay=INSTANT_POST_LIFETIME)
+    except:
+        pass
+
+
 async def handle_forward_channel(message: discord.Message):
     if not message.content.strip():
         return
@@ -560,11 +585,10 @@ async def handle_forward_channel(message: discord.Message):
 
     add_coins(message.author.id, FORWARD_REWARD)
 
-    # ここ重要
     mark_instant_forwarded(source_id)
 
     try:
-        await message.add_reaction("〇")
+        await message.add_reaction("💰")
     except:
         pass
         

@@ -1,7 +1,7 @@
 from flask import Flask
 import threading
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord import app_commands
 import sqlite3
 import random
@@ -29,7 +29,9 @@ TOKEN = os.getenv("TOKEN")
 print("TOKEN exists:", bool(TOKEN))
 
 JST = ZoneInfo("Asia/Tokyo")
-REPORT_HEADER = "🎰 ガチャ総合結果"
+
+# ここをログ用チャンネルIDに変える
+GACHA_LOG_CHANNEL_ID = 1487008334358773842
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -37,7 +39,7 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 DB_PATH = "/var/data/data.db"
-conn = sqlite3.connect("/var/data/data.db", check_same_thread=False)
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 cur = conn.cursor()
 
 cur.execute("""
@@ -58,13 +60,6 @@ CREATE TABLE IF NOT EXISTS gacha_logs (
     character_name TEXT NOT NULL,
     rarity TEXT NOT NULL,
     created_at REAL NOT NULL
-)
-""")
-
-cur.execute("""
-CREATE TABLE IF NOT EXISTS bot_settings (
-    key TEXT PRIMARY KEY,
-    value TEXT
 )
 """)
 
@@ -111,19 +106,6 @@ def log_gacha(user_id: int, gacha_id: str, gacha_name: str, gacha_type: str, cha
     )
     conn.commit()
 
-def get_setting(key: str):
-    cur.execute("SELECT value FROM bot_settings WHERE key=?", (key,))
-    row = cur.fetchone()
-    return row[0] if row else None
-
-def set_setting(key: str, value: str):
-    cur.execute("""
-        INSERT INTO bot_settings (key, value)
-        VALUES (?, ?)
-        ON CONFLICT(key) DO UPDATE SET value=excluded.value
-    """, (key, value))
-    conn.commit()
-
 def add_completion_reward_record(gacha_id: str, user_id: int):
     cur.execute("""
         INSERT INTO completion_rewards (gacha_id, user_id, awarded_at)
@@ -161,15 +143,11 @@ ALLOWED_COMMAND_CHANNELS = [
 ]
 
 COOLDOWN_SECONDS = 2
-REPORT_CHANNEL_ID = 1487008334358773842
 
 # =========================================
 # ここを編集して使う
 # =========================================
 
-# 通常ガチャ（週替わり）
-# start/end は JST で判定
-# role_id はその週のコンプロール
 WEEKLY_GACHAS = [
     {
         "id": "normal_2026_w13",
@@ -185,30 +163,28 @@ WEEKLY_GACHAS = [
             ("[003]さえ", "S", 9, "https://cdn.discordapp.com/attachments/1486863251525603478/1486871101710663770/S_3.png?ex=69c7141f&is=69c5c29f&hm=86c5c46921441db38ca19811c6e693c90fb0227b2046e85f84467e97553c0d2a&"),
             ("[004]ふうあ", "S", 9, "https://cdn.discordapp.com/attachments/1486863251525603478/1486876158749315155/S_2.png?ex=69c718d5&is=69c5c755&hm=4c361ef76e57c20fc3d8bc99484613366ee32455ecaf2184e6df3c0f36062542&"),
             ("[005]そら", "S", 9, "https://cdn.discordapp.com/attachments/1487010239650988182/1487012914228494365/S_3.png?ex=69c79832&is=69c646b2&hm=a6be733f8bbed7cb41feff01e5e2774b34b6b53d39e7a929db134cc030a65740&"),
-            ("[006]せりな","S",9,"https://cdn.discordapp.com/attachments/1486776583858425911/1487110091193843783/S_4.png?ex=69c7f2b2&is=69c6a132&hm=7fce72b32da9c4c844d180a57f25ca616c9f06ee412ccee39955cb45e09a7973&"),
-            ("[007]せな","S", 9,"https://cdn.discordapp.com/attachments/1487059067254870078/1487112005620858900/S_5.png?ex=69c7f47b&is=69c6a2fb&hm=0f71015b6d6386cf0a402aa910c3849045672e525133428a9736347b6f1145f2&"),
-            ("[008]ゆうな","S", 9,"https://cdn.discordapp.com/attachments/1487131651677880480/1487142082178191500/S_6.png?ex=69c8107e&is=69c6befe&hm=d2bc038c8ba07020cb47dcb1ad8e2cf2599a0ee4f55dfe370fb71b10bfc4e9ed&"),
-            ("[009]ここな","B", 22,"https://cdn.discordapp.com/attachments/1486776583858425911/1487150046339141704/image.png?ex=69c817e8&is=69c6c668&hm=b8eb1f263fa314d015aa16ce7fffda080c484790748fd67eed12f448ba9f381f&"),
-            ("[010]みう","A",15,"https://cdn.discordapp.com/attachments/1486776583858425911/1487150273628733522/image.png?ex=69c8181f&is=69c6c69f&hm=3cbbafe3e43be3970fb7cde3f10d4670acb7eb8c699396cf069ba789e00417ab&")
+            ("[006]せりな", "S", 9, "https://cdn.discordapp.com/attachments/1486776583858425911/1487110091193843783/S_4.png?ex=69c7f2b2&is=69c6a132&hm=7fce72b32da9c4c844d180a57f25ca616c9f06ee412ccee39955cb45e09a7973&"),
+            ("[007]せな", "S", 9, "https://cdn.discordapp.com/attachments/1487059067254870078/1487112005620858900/S_5.png?ex=69c7f47b&is=69c6a2fb&hm=0f71015b6d6386cf0a402aa910c3849045672e525133428a9736347b6f1145f2&"),
+            ("[008]ゆうな", "S", 9, "https://cdn.discordapp.com/attachments/1487131651677880480/1487142082178191500/S_6.png?ex=69c8107e&is=69c6befe&hm=d2bc038c8ba07020cb47dcb1ad8e2cf2599a0ee4f55dfe370fb71b10bfc4e9ed&"),
+            ("[009]ここな", "B", 22, "https://cdn.discordapp.com/attachments/1486776583858425911/1487150046339141704/image.png?ex=69c817e8&is=69c6c668&hm=b8eb1f263fa314d015aa16ce7fffda080c484790748fd67eed12f448ba9f381f&"),
+            ("[010]みう", "A", 15, "https://cdn.discordapp.com/attachments/1486776583858425911/1487150273628733522/image.png?ex=69c8181f&is=69c6c69f&hm=3cbbafe3e43be3970fb7cde3f10d4670acb7eb8c699396cf069ba789e00417ab&")
         ]
     }
 ]
 
-# 限定ガチャ
-# 後から追加しやすいようにここに足すだけ
 LIMITED_GACHAS = [
-    # 例
+    # 例:
     # {
-    #     "id": "limited_2026_march_01",
-    #     "name": "3月限定ガチャ",
+    #     "id": "limited_2026_april",
+    #     "name": "4月限定ガチャ",
     #     "type": "limited",
-    #     "start": "2026-03-01 00:00",
-    #     "end": "2026-03-31 23:59",
-    #     "role_id": 0,  # ←ここを限定コンプロールIDに変更
+    #     "start": "2026-04-01 00:00",
+    #     "end": "2026-04-30 23:59",
+    #     "role_id": 123456789012345678,
     #     "cost": 50,
     #     "items": [
-    #         ("限定A", "S", 50, "https://example.com/a.png"),
-    #         ("限定B", "S", 50, "https://example.com/b.png")
+    #         ("限定A", "S", 50, "画像URL"),
+    #         ("限定B", "S", 50, "画像URL")
     #     ]
     # }
 ]
@@ -276,6 +252,27 @@ def get_missing_characters_for_gacha(user_id: int, gacha_def: dict):
 
     all_chars = [item[0] for item in gacha_def["items"]]
     return [name for name in all_chars if name not in owned]
+
+async def send_gacha_log(user: discord.Member | discord.User, gacha_def: dict, character_name: str, remaining_count: int):
+    channel = bot.get_channel(GACHA_LOG_CHANNEL_ID)
+    if channel is None:
+        return
+
+    now_text = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
+
+    if remaining_count <= 0:
+        remain_text = "コンプ達成"
+    else:
+        remain_text = f"残り{remaining_count}種"
+
+    try:
+        await channel.send(
+            f"【{now_text}】 {user.display_name} が「{gacha_def['name']}」で {character_name} を当てました｜{remain_text}"
+        )
+    except discord.Forbidden:
+        pass
+    except discord.HTTPException:
+        pass
 
 async def award_completion_role_if_needed(interaction_or_member, gacha_def: dict):
     role_id = gacha_def.get("role_id", 0)
@@ -346,130 +343,6 @@ async def remove_expired_completion_roles():
 
         remove_completion_reward_record(gacha_id, int(user_id))
 
-def build_report_text():
-    cur.execute("""
-        SELECT COUNT(DISTINCT user_id)
-        FROM gacha_logs
-    """)
-    user_count = cur.fetchone()[0] or 0
-
-    cur.execute("""
-        SELECT COUNT(*)
-        FROM gacha_logs
-    """)
-    total_count = cur.fetchone()[0] or 0
-
-    lines = [
-        REPORT_HEADER,
-        f"総ガチャ回数: {total_count}回",
-        f"ガチャを引いた人数: {user_count}人",
-        ""
-    ]
-
-    weekly = get_active_weekly_gacha()
-    if weekly:
-        lines.append(f"【通常】{weekly['name']}")
-        cur.execute("""
-            SELECT character_name, COUNT(*)
-            FROM gacha_logs
-            WHERE gacha_id=?
-            GROUP BY character_name
-            ORDER BY COUNT(*) DESC, character_name ASC
-        """, (weekly["id"],))
-        rows = cur.fetchall()
-        if not rows:
-            lines.append("まだデータなし")
-        else:
-            for name, count in rows:
-                lines.append(f"{name}: {count}回")
-        lines.append("")
-
-    limited_list = get_active_limited_gachas()
-    for g in limited_list:
-        lines.append(f"【限定】{g['name']}")
-        cur.execute("""
-            SELECT character_name, COUNT(*)
-            FROM gacha_logs
-            WHERE gacha_id=?
-            GROUP BY character_name
-            ORDER BY COUNT(*) DESC, character_name ASC
-        """, (g["id"],))
-        rows = cur.fetchall()
-        if not rows:
-            lines.append("まだデータなし")
-        else:
-            for name, count in rows:
-                lines.append(f"{name}: {count}回")
-        lines.append("")
-
-    if not weekly and not limited_list:
-        lines.append("開催中のガチャはありません。")
-        lines.append("")
-
-    lines.append("このメッセージは1時間ごとに自動更新されます。")
-    return "\n".join(lines)
-
-async def update_report_message():
-    channel = bot.get_channel(REPORT_CHANNEL_ID)
-    if channel is None:
-        return
-
-    text = build_report_text()
-    saved_message_id = get_setting("report_message_id")
-
-    if saved_message_id:
-        try:
-            message = await channel.fetch_message(int(saved_message_id))
-            await message.edit(content=text)
-            return
-        except discord.NotFound:
-            pass
-        except discord.Forbidden:
-            return
-        except discord.HTTPException:
-            return
-
-    # 保存済みIDが無い時、既存の同じ集計メッセージを探して再利用
-    found_messages = []
-    try:
-        async for msg in channel.history(limit=30):
-            if msg.author.id == bot.user.id and msg.content.startswith(REPORT_HEADER):
-                found_messages.append(msg)
-    except discord.Forbidden:
-        return
-    except discord.HTTPException:
-        return
-
-    if found_messages:
-        # 最新1件を使って、残りは削除
-        found_messages.sort(key=lambda m: m.created_at, reverse=True)
-        main_msg = found_messages[0]
-        try:
-            await main_msg.edit(content=text)
-            set_setting("report_message_id", str(main_msg.id))
-        except discord.HTTPException:
-            return
-
-        for extra_msg in found_messages[1:]:
-            try:
-                await extra_msg.delete()
-            except discord.HTTPException:
-                pass
-        return
-
-    try:
-        new_message = await channel.send(text)
-        set_setting("report_message_id", str(new_message.id))
-    except discord.Forbidden:
-        return
-    except discord.HTTPException:
-        return
-
-@tasks.loop(hours=1)
-async def auto_report_loop():
-    await update_report_message()
-    await remove_expired_completion_roles()
-
 @bot.event
 async def on_ready():
     try:
@@ -477,14 +350,6 @@ async def on_ready():
         print(f"Synced {len(synced)} commands")
     except Exception as e:
         print(f"Sync error: {e}")
-
-    if not auto_report_loop.is_running():
-        auto_report_loop.start()
-
-    try:
-        await update_report_message()
-    except Exception as e:
-        print(f"Initial report update error: {e}")
 
     try:
         await remove_expired_completion_roles()
@@ -522,7 +387,7 @@ async def on_message(message):
         _, last = get_user(message.author.id)
 
         if time.time() - last > COOLDOWN_SECONDS:
-            add_coins(message.author.id, media_count * 25)
+            add_coins(message.author.id, media_count * 10)
             set_last_post(message.author.id)
 
     await bot.process_commands(message)
@@ -574,6 +439,16 @@ async def gacha(interaction: discord.Interaction):
     name, rarity, img = roll_from_items(gacha_def["items"])
     log_gacha(interaction.user.id, gacha_def["id"], gacha_def["name"], gacha_def["type"], name, rarity)
 
+    missing = get_missing_characters_for_gacha(interaction.user.id, gacha_def)
+    complete_role = await award_completion_role_if_needed(interaction, gacha_def)
+
+    await send_gacha_log(
+        interaction.user,
+        gacha_def,
+        name,
+        len(missing)
+    )
+
     embed = discord.Embed(
         title=f"🎰 {gacha_def['name']} 結果",
         description=f"{rarity}\n**{name}**",
@@ -581,9 +456,6 @@ async def gacha(interaction: discord.Interaction):
     )
     embed.set_image(url=img)
     embed.set_footer(text=f"{cost}HPT消費しました")
-
-    missing = get_missing_characters_for_gacha(interaction.user.id, gacha_def)
-    complete_role = await award_completion_role_if_needed(interaction, gacha_def)
 
     if complete_role:
         embed.add_field(
@@ -662,6 +534,16 @@ async def limitedgacha(interaction: discord.Interaction, event_id: str | None = 
     name, rarity, img = roll_from_items(gacha_def["items"])
     log_gacha(interaction.user.id, gacha_def["id"], gacha_def["name"], gacha_def["type"], name, rarity)
 
+    missing = get_missing_characters_for_gacha(interaction.user.id, gacha_def)
+    complete_role = await award_completion_role_if_needed(interaction, gacha_def)
+
+    await send_gacha_log(
+        interaction.user,
+        gacha_def,
+        name,
+        len(missing)
+    )
+
     embed = discord.Embed(
         title=f"🎰 {gacha_def['name']} 結果",
         description=f"{rarity}\n**{name}**",
@@ -669,9 +551,6 @@ async def limitedgacha(interaction: discord.Interaction, event_id: str | None = 
     )
     embed.set_image(url=img)
     embed.set_footer(text=f"{cost}HPT消費しました")
-
-    missing = get_missing_characters_for_gacha(interaction.user.id, gacha_def)
-    complete_role = await award_completion_role_if_needed(interaction, gacha_def)
 
     if complete_role:
         embed.add_field(

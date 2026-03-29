@@ -78,7 +78,7 @@ ACTION_DEDUP_SECONDS = 3.0
 instant_posts_lock = threading.Lock()
 latest_instant_post = None
 INSTANT_DELETE_SECONDS = 15
-STEAL_WINDOW_SECONDS = 20
+STEAL_WINDOW_SECONDS = 25
 INSTANT_REWARD = 10
 STEAL_REWARD = 10
 

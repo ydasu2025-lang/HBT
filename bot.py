@@ -258,15 +258,15 @@ WEEKLY_GACHAS = [
         "role_id": 1487114322781143081,
         "cost": 50,
         "items": [
-            ("[001]みゆ", "S", 9, "https://cdn.discordapp.com/attachments/1486776583858425911/1486834490017055010/S.png?ex=69c6f206&is=69c5a086&hm=69ea5c80115bc07d31794aeefad633b5a099eb68336ce3fa79ff63ba8ac83f22&"),
-            ("[002]りみ", "S", 9, "https://cdn.discordapp.com/attachments/1486776583858425911/1486840365032935446/S_1.png?ex=69c6f77f&is=69c5a5ff&hm=260cee99ea95db450ce7dc8a71308bb0ae6bc04a0eff5412cae66247c91b5d7d&"),
-            ("[003]さえ", "S", 9, "https://cdn.discordapp.com/attachments/1486863251525603478/1486871101710663770/S_3.png?ex=69c7141f&is=69c5c29f&hm=86c5c46921441db38ca19811c6e693c90fb0227b2046e85f84467e97553c0d2a&"),
-            ("[004]ふうあ", "S", 9, "https://cdn.discordapp.com/attachments/1486863251525603478/1486876158749315155/S_2.png?ex=69c718d5&is=69c5c755&hm=4c361ef76e57c20fc3d8bc99484613366ee32455ecaf2184e6df3c0f36062542&"),
-            ("[005]そら", "S", 9, "https://cdn.discordapp.com/attachments/1487010239650988182/1487012914228494365/S_3.png?ex=69c79832&is=69c646b2&hm=a6be733f8bbed7cb41feff01e5e2774b34b6b53d39e7a929db134cc030a65740&"),
-            ("[006]せりな", "S", 9, "https://cdn.discordapp.com/attachments/1486776583858425911/1487110091193843783/S_4.png?ex=69c7f2b2&is=69c6a132&hm=7fce72b32da9c4c844d180a57f25ca616c9f06ee412ccee39955cb45e09a7973&"),
-            ("[007]せな", "S", 9, "https://cdn.discordapp.com/attachments/1487059067254870078/1487112005620858900/S_5.png?ex=69c7f47b&is=69c6a2fb&hm=0f71015b6d6386cf0a402aa910c3849045672e525133428a9736347b6f1145f2&"),
-            ("[008]ゆうな", "S", 9, "https://cdn.discordapp.com/attachments/1487131651677880480/1487142082178191500/S_6.png?ex=69c8107e&is=69c6befe&hm=d2bc038c8ba07020cb47dcb1ad8e2cf2599a0ee4f55dfe370fb71b10bfc4e9ed&"),
-            ("[009]ここな", "B", 22, "https://cdn.discordapp.com/attachments/1486776583858425911/1487150046339141704/image.png?ex=69c817e8&is=69c6c668&hm=b8eb1f263fa314d015aa16ce7fffda080c484790748fd67eed12f448ba9f381f&"),
+            ("[001]みゆ", "S", 8, "https://cdn.discordapp.com/attachments/1486776583858425911/1486834490017055010/S.png?ex=69c6f206&is=69c5a086&hm=69ea5c80115bc07d31794aeefad633b5a099eb68336ce3fa79ff63ba8ac83f22&"),
+            ("[002]りみ", "S", 8, "https://cdn.discordapp.com/attachments/1486776583858425911/1486840365032935446/S_1.png?ex=69c6f77f&is=69c5a5ff&hm=260cee99ea95db450ce7dc8a71308bb0ae6bc04a0eff5412cae66247c91b5d7d&"),
+            ("[003]さえ", "S", 8, "https://cdn.discordapp.com/attachments/1486863251525603478/1486871101710663770/S_3.png?ex=69c7141f&is=69c5c29f&hm=86c5c46921441db38ca19811c6e693c90fb0227b2046e85f84467e97553c0d2a&"),
+            ("[004]ふうあ", "S", 8, "https://cdn.discordapp.com/attachments/1486863251525603478/1486876158749315155/S_2.png?ex=69c718d5&is=69c5c755&hm=4c361ef76e57c20fc3d8bc99484613366ee32455ecaf2184e6df3c0f36062542&"),
+            ("[005]そら", "S", 8, "https://cdn.discordapp.com/attachments/1487010239650988182/1487012914228494365/S_3.png?ex=69c79832&is=69c646b2&hm=a6be733f8bbed7cb41feff01e5e2774b34b6b53d39e7a929db134cc030a65740&"),
+            ("[006]せりな", "S", 8, "https://cdn.discordapp.com/attachments/1486776583858425911/1487110091193843783/S_4.png?ex=69c7f2b2&is=69c6a132&hm=7fce72b32da9c4c844d180a57f25ca616c9f06ee412ccee39955cb45e09a7973&"),
+            ("[007]せな", "S", 8, "https://cdn.discordapp.com/attachments/1487059067254870078/1487112005620858900/S_5.png?ex=69c7f47b&is=69c6a2fb&hm=0f71015b6d6386cf0a402aa910c3849045672e525133428a9736347b6f1145f2&"),
+            ("[008]ゆうな", "S", 8, "https://cdn.discordapp.com/attachments/1487131651677880480/1487142082178191500/S_6.png?ex=69c8107e&is=69c6befe&hm=d2bc038c8ba07020cb47dcb1ad8e2cf2599a0ee4f55dfe370fb71b10bfc4e9ed&"),
+            ("[009]ここな", "B", 21, "https://cdn.discordapp.com/attachments/1486776583858425911/1487150046339141704/image.png?ex=69c817e8&is=69c6c668&hm=b8eb1f263fa314d015aa16ce7fffda080c484790748fd67eed12f448ba9f381f&"),
             ("[010]みう", "A", 15, "https://cdn.discordapp.com/attachments/1486776583858425911/1487150273628733522/image.png?ex=69c8181f&is=69c6c69f&hm=3cbbafe3e43be3970fb7cde3f10d4670acb7eb8c699396cf069ba789e00417ab&")
         ]
     },
@@ -279,16 +279,16 @@ WEEKLY_GACHAS = [
         "role_id": 1487365710035292252,
         "cost": 50,
         "items": [
-            ("[011]いずみ", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487368081713139762/S_8.png?ex=69c8e2f8&is=69c79178&hm=f553457f674fb636c9752f9cc2a9f8d9cc7e66f560bf252c5debce9aebc67a92&"),
-            ("[012]りの", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487368174986068038/S_10.png?ex=69c8e30e&is=69c7918e&hm=74f951b0d28e0b65cf967fc7c3f7ef5cc3d7e46cf81cc93b8228e2e33b92c0a0&"),
-            ("[013]えこ", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487367858353602590/S_11.png?ex=69c8e2c3&is=69c79143&hm=d406fea98b8057885afad5feabcaa2dcbe0e5cce9ca1f5fbd4ce777585e3d458&"),
-            ("[014]ひめの", "A", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487375652788244530/S_13.png?ex=69c8ea05&is=69c79885&hm=998df520f512184e96b419161de24c4f13a5ed1566479fa684019dd6a22c8b18&"),
-            ("[015]こころ", "A", 10, "https://media.discordapp.net/attachments/1486776583858425911/1487829177238421524/S_24.png?ex=69ca9066&is=69c93ee6&hm=0908e2b623cf850153375399fcfe290b5a046e11be623944e01a5317259454f0&=&format=webp&quality=lossless&width=310&height=438"),
-            ("[016]あん", "B", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487827239516242130/S_23.png?ex=69ca8e98&is=69c93d18&hm=d36572f1b990ce2b87f3f7d4cd17b7481a2218726ea7d0767e4d40a50e5fb51a&"),
-            ("[017]れんか", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487450960086306876/S_18.png?ex=69c93028&is=69c7dea8&hm=49f451a350f7a7d2d562257979458e7fa27a1049033d61b904fc82f9d01b7752&"),
-            ("[018]ここ", "S", 10, "https://cdn.discordapp.com/attachments/1486776583858425911/1487451045746704414/S_19.png?ex=69c9303c&is=69c7debc&hm=cc6a07a5ba4c3c9253ce63cfd182ce52457bf3fb5292a129e263e0d6c1d0da4d&"),
-            ("[019]りおな", "B", 10, "https://media.discordapp.net/attachments/1486776583858425911/1487452783593390212/S_20.png?ex=69c931db&is=69c7e05b&hm=c74ea535a34b97eb9f22013a23399ce7d60b6271cfd8d2ef610df0df7336a350&=&format=webp&quality=lossless&width=310&height=438"),
-            ("[020]まさき", "A", 10, "https://media.discordapp.net/attachments/1486776583858425911/1487453938679550022/S_21.png?ex=69c932ee&is=69c7e16e&hm=b1d545dbf779be9e2104c94fd8d1b462946cf241db01b1c831d9ade9f4bcf153&=&format=webp&quality=lossless&width=660&height=930")
+            ("[011]いずみ", "S", 6, "https://cdn.discordapp.com/attachments/1486776583858425911/1487897175789797396/S_8.png?ex=69cacfba&is=69c97e3a&hm=219090068ff92b4d6459dbd8c9ff969f4a8f31b57f30285652b81fa2d408453a&"),
+            ("[012]りの", "S", 6, "https://cdn.discordapp.com/attachments/1486776583858425911/1487897331582898236/S_10.png?ex=69cacfdf&is=69c97e5f&hm=224bda5c89e807ba08a53cf3f880cd13bbe167e3a23679392deb9c8bb39d7fc2&"),
+            ("[013]えこ", "A", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487897590103019721/S_11.png?ex=69cad01d&is=69c97e9d&hm=5fd421c5252037ef0a97f0a4a8a8b67adbee25ef6565f43ffbec8489cf402811&"),
+            ("[014]ひめの", "A", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487897733221060780/S_24.png?ex=69cad03f&is=69c97ebf&hm=efd6fa1f1cf2a9808ab7f4c93cdf9e0ee2b0f6151dbebd31832b3262e695769d&"),
+            ("[015]こころ", "A", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487897907909623951/S_15.png?ex=69cad069&is=69c97ee9&hm=42079b6dd381940b765a3f522f726c9d1cdde7983f5eec9daa12200dd223e8b9&"),
+            ("[016]あん", "B", 16, "https://cdn.discordapp.com/attachments/1486776583858425911/1487898056857751662/S_23.png?ex=69cad08c&is=69c97f0c&hm=7bb0b8e4e2ec277987b1fc8078c4236d8b78497bb541f8274431cbc7576563c7&"),
+            ("[017]れんか", "A", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487898221652086925/S_18.png?ex=69cad0b3&is=69c97f33&hm=00827121c56418dc18197781ec1bd1a54c929e5c98d89018281a2d79865f51ab&"),
+            ("[018]ここ", "A", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487898541052395664/S_19.png?ex=69cad100&is=69c97f80&hm=2ddf961e77d38564f583b26fb5109606ba208dde146b6e5eb5247a74f9f94ced&"),
+            ("[019]りおな", "S", 6, "https://cdn.discordapp.com/attachments/1486776583858425911/1487898695621017620/S_20.png?ex=69cad124&is=69c97fa4&hm=2df05b28aab82223a47429328d2a137b13540bac23d923696c29329490caca06&"),
+            ("[020]まさき", "A", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487898828748095711/S_21.png?ex=69cad144&is=69c97fc4&hm=24c257abd5ed1b65ae7ebd2772e247b0ecbf3b0e4d8acf82817ee039f2bcc840&")
         ]
     }
 ]

@@ -603,7 +603,7 @@ async def on_ready():
     migrate_gacha_logs_to_user_characters()
 
     try:
-        guild = discord.Object(id=ここにサーバーID)
+        guild = discord.Object(id=1486767379253035150)
         bot.tree.copy_global_to(guild=guild)
         synced = await bot.tree.sync(guild=guild)
         print(f"Guild synced {len(synced)} commands")

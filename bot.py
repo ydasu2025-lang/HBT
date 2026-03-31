@@ -600,9 +600,13 @@ async def handle_steal_channel(message: discord.Message):
 
 @bot.event
 async def on_ready():
+    migrate_gacha_logs_to_user_characters()
+
     try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} commands")
+        guild = discord.Object(id=ここにサーバーID)
+        bot.tree.copy_global_to(guild=guild)
+        synced = await bot.tree.sync(guild=guild)
+        print(f"Guild synced {len(synced)} commands")
     except Exception as e:
         print(f"Sync error: {e}")
 
@@ -615,7 +619,6 @@ async def on_ready():
         periodic_cleanup.start()
 
     print(f"Logged in as {bot.user} ({bot.user.id})")
-
 @bot.event
 async def on_message(message):
     if message.author.bot:

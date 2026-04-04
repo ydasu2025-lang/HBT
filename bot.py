@@ -61,6 +61,7 @@ ALLOWED_LINK_CHANNEL_IDS = [
     1487337446189563934
 ]
 
+# 画像/動画投稿でHPTが入る通常投稿チャンネル
 ALLOWED_CHANNEL_IDS = [
     1486774240735789066,
     1486774297505824810,
@@ -69,10 +70,10 @@ ALLOWED_CHANNEL_IDS = [
     1486877578093658162
 ]
 
-ALLOWED_COMMAND_CHANNELS = [
-    1486779110758940853,
-    1486877578093658162
-]
+# コマンド用チャンネル
+NORMAL_GACHA_CHANNEL_ID = 1486779110758940853
+LIMITED_GACHA_CHANNEL_ID = 1489838880579653672
+COMMON_COMMAND_CHANNEL_ID = 1489839639542894702
 
 COOLDOWN_SECONDS = 2
 TRADE_COST = 350
@@ -179,7 +180,7 @@ WEEKLY_GACHAS = [
 ]
 
 LIMITED_GACHAS = [
- {
+    {
         "id": "SP_2026_1",
         "name": "えちきゃちプレミアムガチャ",
         "type": "limited",
@@ -188,32 +189,25 @@ LIMITED_GACHAS = [
         "role_id": 1489812451980611644,
         "cost": 75,
         "items": [
-             ("char_006", "[006]せりな", "S", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487110091193843783/S_4.png?ex=69c7f2b2&is=69c6a132&hm=7fce72b32da9c4c844d180a57f25ca616c9f06ee412ccee39955cb45e09a7973&"),
-             ("char_007", "[007]せな", "S", 11, "https://cdn.discordapp.com/attachments/1487059067254870078/1487112005620858900/S_5.png?ex=69c7f47b&is=69c6a2fb&hm=0f71015b6d6386cf0a402aa910c3849045672e525133428a9736347b6f1145f2&"),
-             ("char_010", "[010]みう", "A", 14, "https://cdn.discordapp.com/attachments/1486776583858425911/1487150273628733522/image.png?ex=69c8181f&is=69c6c69f&hm=3cbbafe3e43be3970fb7cde3f10d4670acb7eb8c699396cf069ba789e00417ab&"),
-             ("char_706", "[706]せりな＋","S", 3, "https://cdn.discordapp.com/attachments/1486776583858425911/1489814809925910598/S_10.png?ex=69d1c9aa&is=69d0782a&hm=86b802f746ed7d669186d2618cd915874919068be13f93df493ad0a728afba01&"),
-             ("char_707", "[707]せな＋","S", 3, "https://cdn.discordapp.com/attachments/1486776583858425911/1489814917170331699/S_3.png?ex=69d1c9c3&is=69d07843&hm=2f47a0582f69fd9055296fe3720be12bbb60b2e3d92aa19a0c53381a3f462ea0&"),
-             ("char_710", "[710]みう＋","S", 3,"https://cdn.discordapp.com/attachments/1486776583858425911/1489814832277356564/S_9.png?ex=69d1c9af&is=69d0782f&hm=a8f8361e675287d19d507d3274117ca60a060b580e5228ebe0919af5f3738c37&"),
-             ("char_901", "[901]ゆうか","C", 5,"https://cdn.discordapp.com/attachments/1489819364910825482/1489821034482896896/S_13.png?ex=69d1cf76&is=69d07df6&hm=5f50101fc41507b42cb41eefe0463ebaa550ae250d12f9e0cd6368c47beb273a&"),
-             ("char_902", "[902]あやの","C", 5,"https://cdn.discordapp.com/attachments/1489820457954967562/1489821522506809354/S_14.png?ex=69d1cfea&is=69d07e6a&hm=8bfbd785f7b013a29d07a9cfe12e07454b2c1f4ba8baf73492dcabd1fdca4a4e&"),
-             ("char_903", "[903]まなみ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489823730086711448/S_15.png?ex=69d1d1f8&is=69d08078&hm=05f17dc0740f701df9101a917f09be8fca2861c61ce1cd3c14d607772725f793&"),
-             ("char_904", "[904]にこ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489825627447230485/S_16.png?ex=69d1d3bd&is=69d0823d&hm=5b40ca1e8dcc79be258f0d86fdb9c7a580417657028da3e7aaba64d8bee091eb&"),
-             ("char_905", "[905]りん","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489826292252676217/S_17.png?ex=69d1d45b&is=69d082db&hm=1919e158473fcb776c7cb04bdc2af994a2915cd443d20b12b6284262ff5d0e90&"),
-             ("char_906", "[906]ゆいこ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489826770562711632/S_18.png?ex=69d1d4cd&is=69d0834d&hm=1e022673bba7e98d1fa0116f997e151beaba59dc89e2e226630de90e6bc4be07&"),
-             ("char_907", "[907]なつき","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489827184926523493/S_19.png?ex=69d1d530&is=69d083b0&hm=fd3ba17105021180b01c0f549dfe52572d80bf7b562574e29860558d630fc91d&"),
-             ("char_908", "[908]ひな","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489827689551630437/S_20.png?ex=69d1d5a8&is=69d08428&hm=82c62561bb0bb1969efbecb74633bcd621fbb55ee5ee8876309513f8eec2f890&"),
-             ("char_909", "[909]きよら","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489828419985215690/S_21.png?ex=69d1d656&is=69d084d6&hm=8f9fa1df00821eaec64324da0dffe789bd4125918477b3249b24d74c62222cd8&"),
-             ("char_910", "[910]まお","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489829087491915787/S_22.png?ex=69d1d6f6&is=69d08576&hm=c94e1f4f1f0321917b2d063501535751ee92e5c6c1cfe9173fb73d8bb13b1dfa&"),
-             ("char_911", "[911]ねいろ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489829877396799518/S_23.png?ex=69d1d7b2&is=69d08632&hm=e120c14a2aec5d38c2e00bac18672d48de1ad5460da4f7525910023cd0575172&"),
-           　("char_911", "[911]ねいろ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489829877396799518/S_23.png?ex=69d1d7b2&is=69d08632&hm=e120c14a2aec5d38c2e00bac18672d48de1ad5460da4f7525910023cd0575172&"),      
+            ("char_006", "[006]せりな", "S", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487110091193843783/S_4.png?ex=69c7f2b2&is=69c6a132&hm=7fce72b32da9c4c844d180a57f25ca616c9f06ee412ccee39955cb45e09a7973&"),
+            ("char_007", "[007]せな", "S", 11, "https://cdn.discordapp.com/attachments/1487059067254870078/1487112005620858900/S_5.png?ex=69c7f47b&is=69c6a2fb&hm=0f71015b6d6386cf0a402aa910c3849045672e525133428a9736347b6f1145f2&"),
+            ("char_010", "[010]みう", "A", 14, "https://cdn.discordapp.com/attachments/1486776583858425911/1487150273628733522/image.png?ex=69c8181f&is=69c6c69f&hm=3cbbafe3e43be3970fb7cde3f10d4670acb7eb8c699396cf069ba789e00417ab&"),
+            ("char_706", "[706]せりな＋", "S", 3, "https://cdn.discordapp.com/attachments/1486776583858425911/1489814809925910598/S_10.png?ex=69d1c9aa&is=69d0782a&hm=86b802f746ed7d669186d2618cd915874919068be13f93df493ad0a728afba01&"),
+            ("char_707", "[707]せな＋", "S", 3, "https://cdn.discordapp.com/attachments/1486776583858425911/1489814917170331699/S_3.png?ex=69d1c9c3&is=69d07843&hm=2f47a0582f69fd9055296fe3720be12bbb60b2e3d92aa19a0c53381a3f462ea0&"),
+            ("char_710", "[710]みう＋", "S", 3, "https://cdn.discordapp.com/attachments/1486776583858425911/1489814832277356564/S_9.png?ex=69d1c9af&is=69d0782f&hm=a8f8361e675287d19d507d3274117ca60a060b580e5228ebe0919af5f3738c37&"),
+            ("char_901", "[901]ゆうか", "C", 5, "https://cdn.discordapp.com/attachments/1489819364910825482/1489821034482896896/S_13.png?ex=69d1cf76&is=69d07df6&hm=5f50101fc41507b42cb41eefe0463ebaa550ae250d12f9e0cd6368c47beb273a&"),
+            ("char_902", "[902]あやの", "C", 5, "https://cdn.discordapp.com/attachments/1489820457954967562/1489821522506809354/S_14.png?ex=69d1cfea&is=69d07e6a&hm=8bfbd785f7b013a29d07a9cfe12e07454b2c1f4ba8baf73492dcabd1fdca4a4e&"),
+            ("char_903", "[903]まなみ", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489823730086711448/S_15.png?ex=69d1d1f8&is=69d08078&hm=05f17dc0740f701df9101a917f09be8fca2861c61ce1cd3c14d607772725f793&"),
+            ("char_904", "[904]にこ", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489825627447230485/S_16.png?ex=69d1d3bd&is=69d0823d&hm=5b40ca1e8dcc79be258f0d86fdb9c7a580417657028da3e7aaba64d8bee091eb&"),
+            ("char_905", "[905]りん", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489826292252676217/S_17.png?ex=69d1d45b&is=69d082db&hm=1919e158473fcb776c7cb04bdc2af994a2915cd443d20b12b6284262ff5d0e90&"),
+            ("char_906", "[906]ゆいこ", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489826770562711632/S_18.png?ex=69d1d4cd&is=69d0834d&hm=1e022673bba7e98d1fa0116f997e151beaba59dc89e2e226630de90e6bc4be07&"),
+            ("char_907", "[907]なつき", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489827184926523493/S_19.png?ex=69d1d530&is=69d083b0&hm=fd3ba17105021180b01c0f549dfe52572d80bf7b562574e29860558d630fc91d&"),
+            ("char_908", "[908]ひな", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489827689551630437/S_20.png?ex=69d1d5a8&is=69d08428&hm=82c62561bb0bb1969efbecb74633bcd621fbb55ee5ee8876309513f8eec2f890&"),
+            ("char_909", "[909]きよら", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489828419985215690/S_21.png?ex=69d1d656&is=69d084d6&hm=8f9fa1df00821eaec64324da0dffe789bd4125918477b3249b24d74c62222cd8&"),
+            ("char_910", "[910]まお", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489829087491915787/S_22.png?ex=69d1d6f6&is=69d08576&hm=c94e1f4f1f0321917b2d063501535751ee92e5c6c1cfe9173fb73d8bb13b1dfa&"),
+            ("char_911", "[911]ねいろ", "C", 5, "https://cdn.discordapp.com/attachments/1488160339806781571/1489829877396799518/S_23.png?ex=69d1d7b2&is=69d08632&hm=e120c14a2aec5d38c2e00bac18672d48de1ad5460da4f7525910023cd0575172&"),
         ]
-    },
-
-
-
-
-
-    
+    }
 ]
 
 intents = discord.Intents.default()
@@ -222,6 +216,8 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 DB_PATH = "/var/data/data.db"
+BACKUP_DIR = "/var/data/db_backups"
+
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 db_lock = threading.Lock()
 
@@ -231,6 +227,10 @@ instant_posts_lock = threading.Lock()
 latest_instant_post = None
 
 with db_lock:
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=FULL")
+    conn.execute("PRAGMA foreign_keys=ON")
+
     conn.execute("""
     CREATE TABLE IF NOT EXISTS users (
         user_id TEXT PRIMARY KEY,
@@ -271,6 +271,35 @@ with db_lock:
     """)
 
     conn.commit()
+
+
+def backup_database():
+    try:
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        ts = datetime.now(JST).strftime("%Y%m%d_%H%M%S")
+        backup_path = os.path.join(BACKUP_DIR, f"data_backup_{ts}.db")
+
+        with sqlite3.connect(backup_path) as backup_conn:
+            with db_lock:
+                conn.backup(backup_conn)
+
+        backups = sorted(
+            [
+                os.path.join(BACKUP_DIR, f)
+                for f in os.listdir(BACKUP_DIR)
+                if f.endswith(".db")
+            ]
+        )
+        while len(backups) > 10:
+            old = backups.pop(0)
+            try:
+                os.remove(old)
+            except OSError:
+                pass
+
+        print(f"DB backup created: {backup_path}")
+    except Exception as e:
+        print(f"DB backup error: {e}")
 
 
 def now_jst():
@@ -737,6 +766,7 @@ async def handle_steal_channel(message: discord.Message):
 
 @bot.event
 async def on_ready():
+    backup_database()
     migrate_gacha_logs_to_user_characters()
 
     try:
@@ -816,18 +846,27 @@ async def on_message(message):
 
 @bot.tree.command(name="balance", description="自分のHPTを見る")
 async def balance(interaction: discord.Interaction):
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != COMMON_COMMAND_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは共通コマンドチャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     coins, _ = get_user(interaction.user.id)
-    await interaction.response.send_message(f"💰 {interaction.user.display_name} のHPT: {coins}", ephemeral=True)
+    await interaction.response.send_message(
+        f"💰 {interaction.user.display_name} のHPT: {coins}",
+        ephemeral=True
+    )
 
 
 @bot.tree.command(name="mycharacters", description="自分の所持キャラ一覧を見る")
 async def mycharacters(interaction: discord.Interaction):
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != COMMON_COMMAND_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは共通コマンドチャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     owned_ids = get_user_owned_character_ids(interaction.user.id)
@@ -863,17 +902,26 @@ async def mycharacters(interaction: discord.Interaction):
 
 @bot.tree.command(name="gacha", description="通常ガチャを引く")
 async def gacha(interaction: discord.Interaction):
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != NORMAL_GACHA_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは通常ガチャ専用チャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     if not check_and_mark_recent_action(interaction.user.id, "gacha"):
-        await interaction.response.send_message("処理中です。少し待ってからもう一度試してください。", ephemeral=True)
+        await interaction.response.send_message(
+            "処理中です。少し待ってからもう一度試してください。",
+            ephemeral=True
+        )
         return
 
     gacha_def = get_active_weekly_gacha()
     if gacha_def is None:
-        await interaction.response.send_message("現在開催中の通常ガチャはありません。", ephemeral=True)
+        await interaction.response.send_message(
+            "現在開催中の通常ガチャはありません。",
+            ephemeral=True
+        )
         return
 
     coins, _ = get_user(interaction.user.id)
@@ -924,28 +972,43 @@ async def gacha(interaction: discord.Interaction):
 @app_commands.describe(character="交換したいキャラ")
 @app_commands.autocomplete(character=trade_normal_character_autocomplete)
 async def trade_normal(interaction: discord.Interaction, character: str):
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != NORMAL_GACHA_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは通常ガチャ専用チャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     if not check_and_mark_recent_action(interaction.user.id, "trade_normal"):
-        await interaction.response.send_message("処理中です。少し待ってからもう一度試してください。", ephemeral=True)
+        await interaction.response.send_message(
+            "処理中です。少し待ってからもう一度試してください。",
+            ephemeral=True
+        )
         return
 
     gacha_def = get_active_weekly_gacha()
     if gacha_def is None:
-        await interaction.response.send_message("現在開催中の通常ガチャはありません。", ephemeral=True)
+        await interaction.response.send_message(
+            "現在開催中の通常ガチャはありません。",
+            ephemeral=True
+        )
         return
 
     item = find_item_in_gacha_by_name(gacha_def, character)
     if item is None:
-        await interaction.response.send_message("そのキャラは今回の通常ガチャにいません。", ephemeral=True)
+        await interaction.response.send_message(
+            "そのキャラは今回の通常ガチャにいません。",
+            ephemeral=True
+        )
         return
 
     character_id, name, rarity, weight, img = item
 
     if user_has_character_global(interaction.user.id, character_id):
-        await interaction.response.send_message("そのキャラはすでに所持しています。未所持キャラのみ交換できます。", ephemeral=True)
+        await interaction.response.send_message(
+            "そのキャラはすでに所持しています。未所持キャラのみ交換できます。",
+            ephemeral=True
+        )
         return
 
     coins, _ = get_user(interaction.user.id)
@@ -991,17 +1054,26 @@ async def trade_normal(interaction: discord.Interaction, character: str):
 @bot.tree.command(name="limitedgacha", description="限定ガチャを引く")
 @app_commands.describe(event_id="限定ガチャID。1つしか開催中でない時は空欄でOK")
 async def limitedgacha(interaction: discord.Interaction, event_id: str | None = None):
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != LIMITED_GACHA_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは限定ガチャ専用チャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     if not check_and_mark_recent_action(interaction.user.id, "limitedgacha"):
-        await interaction.response.send_message("処理中です。少し待ってからもう一度試してください。", ephemeral=True)
+        await interaction.response.send_message(
+            "処理中です。少し待ってからもう一度試してください。",
+            ephemeral=True
+        )
         return
 
     active_limited = get_active_limited_gachas()
     if not active_limited:
-        await interaction.response.send_message("現在開催中の限定ガチャはありません。", ephemeral=True)
+        await interaction.response.send_message(
+            "現在開催中の限定ガチャはありません。",
+            ephemeral=True
+        )
         return
 
     if event_id:
@@ -1070,13 +1142,19 @@ async def limitedgacha(interaction: discord.Interaction, event_id: str | None = 
 
 @bot.tree.command(name="limitedlist", description="開催中の限定ガチャ一覧を見る")
 async def limitedlist(interaction: discord.Interaction):
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != LIMITED_GACHA_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは限定ガチャ専用チャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     active_limited = get_active_limited_gachas()
     if not active_limited:
-        await interaction.response.send_message("現在開催中の限定ガチャはありません。", ephemeral=True)
+        await interaction.response.send_message(
+            "現在開催中の限定ガチャはありません。",
+            ephemeral=True
+        )
         return
 
     lines = []
@@ -1092,8 +1170,11 @@ async def limitedlist(interaction: discord.Interaction):
 @bot.tree.command(name="collection", description="自分のコンプ状況を見る")
 @app_commands.describe(gacha_type="normal または limited", event_id="limited の時だけ必要")
 async def collection(interaction: discord.Interaction, gacha_type: str, event_id: str | None = None):
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != COMMON_COMMAND_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは共通コマンドチャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     gacha_type = gacha_type.lower().strip()
@@ -1101,19 +1182,31 @@ async def collection(interaction: discord.Interaction, gacha_type: str, event_id
     if gacha_type == "normal":
         gacha_def = get_active_weekly_gacha()
         if gacha_def is None:
-            await interaction.response.send_message("現在開催中の通常ガチャはありません。", ephemeral=True)
+            await interaction.response.send_message(
+                "現在開催中の通常ガチャはありません。",
+                ephemeral=True
+            )
             return
     elif gacha_type == "limited":
         if not event_id:
-            await interaction.response.send_message("limited の時は event_id を指定してください。/limitedlist で確認できます。", ephemeral=True)
+            await interaction.response.send_message(
+                "limited の時は event_id を指定してください。/limitedlist で確認できます。",
+                ephemeral=True
+            )
             return
 
         gacha_def = get_limited_gacha_by_id(event_id)
         if gacha_def is None:
-            await interaction.response.send_message("その限定ガチャは開催中ではありません。", ephemeral=True)
+            await interaction.response.send_message(
+                "その限定ガチャは開催中ではありません。",
+                ephemeral=True
+            )
             return
     else:
-        await interaction.response.send_message("gacha_type は normal か limited を指定してください。", ephemeral=True)
+        await interaction.response.send_message(
+            "gacha_type は normal か limited を指定してください。",
+            ephemeral=True
+        )
         return
 
     missing = get_missing_names_for_gacha(interaction.user.id, gacha_def)
@@ -1133,8 +1226,11 @@ async def collection(interaction: discord.Interaction, gacha_type: str, event_id
 
 @bot.tree.command(name="top", description="HPTランキングを見る")
 async def top(interaction: discord.Interaction):
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != COMMON_COMMAND_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは共通コマンドチャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     with db_lock:
@@ -1143,7 +1239,10 @@ async def top(interaction: discord.Interaction):
         ).fetchall()
 
     if not rows:
-        await interaction.response.send_message("まだランキングデータがないよ。", ephemeral=True)
+        await interaction.response.send_message(
+            "まだランキングデータがないよ。",
+            ephemeral=True
+        )
         return
 
     lines = []
@@ -1164,19 +1263,32 @@ async def top(interaction: discord.Interaction):
 @app_commands.describe(user="送り先", amount="送るHPT")
 async def givehpt(interaction: discord.Interaction, user: discord.Member, amount: int):
     if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("権限がありません。", ephemeral=True)
+        await interaction.response.send_message(
+            "権限がありません。",
+            ephemeral=True
+        )
         return
 
-    if interaction.channel_id not in ALLOWED_COMMAND_CHANNELS:
-        await interaction.response.send_message("このコマンドは指定チャンネルで使ってください。", ephemeral=True)
+    if interaction.channel_id != COMMON_COMMAND_CHANNEL_ID:
+        await interaction.response.send_message(
+            "このコマンドは共通コマンドチャンネルで使ってください。",
+            ephemeral=True
+        )
         return
 
     if amount <= 0:
-        await interaction.response.send_message("1以上の数値を入力してください。", ephemeral=True)
+        await interaction.response.send_message(
+            "1以上の数値を入力してください。",
+            ephemeral=True
+        )
         return
 
     add_coins(user.id, amount)
-    await interaction.response.send_message(f"💸 {user.display_name} に {amount} HPT付与しました。", ephemeral=True)
+
+    await interaction.response.send_message(
+        f"💸 {user.display_name} に {amount} HPT付与しました。",
+        ephemeral=True
+    )
 
 
 if __name__ == "__main__":

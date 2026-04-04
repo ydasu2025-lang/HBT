@@ -130,6 +130,7 @@ CHARACTER_MAP = {
     "char_909": "[909]きよら",
     "char_910": "[910]まお",
     "char_911": "[911]ねいろ",
+    "char_912": "[912]めい",
 }
 
 # item format:
@@ -195,7 +196,6 @@ LIMITED_GACHAS = [
              ("char_706", "[706]せりな＋","S", 3, "https://cdn.discordapp.com/attachments/1486776583858425911/1489814809925910598/S_10.png?ex=69d1c9aa&is=69d0782a&hm=86b802f746ed7d669186d2618cd915874919068be13f93df493ad0a728afba01&"),
              ("char_707", "[707]せな＋","S", 3, "https://cdn.discordapp.com/attachments/1486776583858425911/1489814917170331699/S_3.png?ex=69d1c9c3&is=69d07843&hm=2f47a0582f69fd9055296fe3720be12bbb60b2e3d92aa19a0c53381a3f462ea0&"),
              ("char_710", "[710]みう＋","S", 3,"https://cdn.discordapp.com/attachments/1486776583858425911/1489814832277356564/S_9.png?ex=69d1c9af&is=69d0782f&hm=a8f8361e675287d19d507d3274117ca60a060b580e5228ebe0919af5f3738c37&"),
-             ("char_900", "[900]ほのか","C", 5,"https://cdn.discordapp.com/attachments/1486776583858425911/1489816603791986800/S_11.png?ex=69d1cb55&is=69d079d5&hm=e6542a09dc37ca2a9ec97e7e19c90e5c4ed2dfdbb1c3b2814b32ea72839d8227&"),
              ("char_901", "[901]ゆうか","C", 5,"https://cdn.discordapp.com/attachments/1489819364910825482/1489821034482896896/S_13.png?ex=69d1cf76&is=69d07df6&hm=5f50101fc41507b42cb41eefe0463ebaa550ae250d12f9e0cd6368c47beb273a&"),
              ("char_902", "[902]あやの","C", 5,"https://cdn.discordapp.com/attachments/1489820457954967562/1489821522506809354/S_14.png?ex=69d1cfea&is=69d07e6a&hm=8bfbd785f7b013a29d07a9cfe12e07454b2c1f4ba8baf73492dcabd1fdca4a4e&"),
              ("char_903", "[903]まなみ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489823730086711448/S_15.png?ex=69d1d1f8&is=69d08078&hm=05f17dc0740f701df9101a917f09be8fca2861c61ce1cd3c14d607772725f793&"),
@@ -206,7 +206,8 @@ LIMITED_GACHAS = [
              ("char_908", "[908]ひな","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489827689551630437/S_20.png?ex=69d1d5a8&is=69d08428&hm=82c62561bb0bb1969efbecb74633bcd621fbb55ee5ee8876309513f8eec2f890&"),
              ("char_909", "[909]きよら","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489828419985215690/S_21.png?ex=69d1d656&is=69d084d6&hm=8f9fa1df00821eaec64324da0dffe789bd4125918477b3249b24d74c62222cd8&"),
              ("char_910", "[910]まお","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489829087491915787/S_22.png?ex=69d1d6f6&is=69d08576&hm=c94e1f4f1f0321917b2d063501535751ee92e5c6c1cfe9173fb73d8bb13b1dfa&"),
-             ("char_911", "[911]ねいろ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489829877396799518/S_23.png?ex=69d1d7b2&is=69d08632&hm=e120c14a2aec5d38c2e00bac18672d48de1ad5460da4f7525910023cd0575172&"),            
+             ("char_911", "[911]ねいろ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489829877396799518/S_23.png?ex=69d1d7b2&is=69d08632&hm=e120c14a2aec5d38c2e00bac18672d48de1ad5460da4f7525910023cd0575172&"),
+           　("char_911", "[911]ねいろ","C", 5,"https://cdn.discordapp.com/attachments/1488160339806781571/1489829877396799518/S_23.png?ex=69d1d7b2&is=69d08632&hm=e120c14a2aec5d38c2e00bac18672d48de1ad5460da4f7525910023cd0575172&"),      
         ]
     },
 

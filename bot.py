@@ -40,6 +40,11 @@ GACHA_LOG_CHANNEL_ID = 1487008334358773842
 INSTANT_IMAGE_CHANNEL_ID = 1487497896000618507
 STEAL_CHANNEL_ID = 1487497933632045276
 
+# TP system
+STREAMER_ROLE_ID = 1489933727982420141
+VOTE_CHANNEL_ID = 1489868014475284652
+RANKING_CHANNEL_ID = 1490000404455620678
+
 ALLOWED_LINK_CHANNEL_IDS = [
     STEAL_CHANNEL_ID,
     1486779110758940853,
@@ -213,6 +218,7 @@ LIMITED_GACHAS = [
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.voice_states = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 DB_PATH = "/var/data/data.db"
@@ -225,6 +231,17 @@ recent_action_lock = threading.Lock()
 recent_actions = {}
 instant_posts_lock = threading.Lock()
 latest_instant_post = None
+
+# active streamer voice sessions in memory
+# {
+#   user_id: {
+#       "channel_id": int,
+#       "last_ts": float,
+#       "eligible": bool,
+#       "carry_seconds": int
+#   }
+# }
+voice_sessions = {}
 
 with db_lock:
     conn.execute("PRAGMA journal_mode=WAL")
@@ -267,6 +284,28 @@ with db_lock:
         character_id TEXT NOT NULL,
         obtained_at REAL NOT NULL,
         PRIMARY KEY (user_id, character_id)
+    )
+    """)
+
+    # TP system
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS streamer_points (
+        user_id TEXT PRIMARY KEY,
+        points INTEGER DEFAULT 0
+    )
+    """)
+
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS vote_messages (
+        streamer_id TEXT PRIMARY KEY,
+        message_id TEXT NOT NULL
+    )
+    """)
+
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS bot_state (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
     )
     """)
 
@@ -692,11 +731,323 @@ async def remove_expired_completion_roles():
         remove_completion_reward_record(gacha_id, int(user_id))
 
 
+# =========================
+# TP SYSTEM
+# =========================
+def is_streamer(member: discord.Member) -> bool:
+    return any(role.id == STREAMER_ROLE_ID for role in member.roles)
+
+
+def has_non_streamer_listener(channel: discord.VoiceChannel | discord.StageChannel | None) -> bool:
+    if channel is None:
+        return False
+
+    for m in channel.members:
+        if m.bot:
+            continue
+        if is_streamer(m):
+            continue
+        return True
+    return False
+
+
+def add_tp(user_id: int, amount: int):
+    if amount <= 0:
+        return
+
+    with db_lock:
+        conn.execute("""
+            INSERT INTO streamer_points (user_id, points)
+            VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET points = points + excluded.points
+        """, (str(user_id), amount))
+        conn.commit()
+
+
+def reset_all_tp():
+    with db_lock:
+        conn.execute("DELETE FROM streamer_points")
+        conn.commit()
+
+
+def get_tp_points_map():
+    with db_lock:
+        rows = conn.execute("""
+            SELECT user_id, points
+            FROM streamer_points
+        """).fetchall()
+    return {str(user_id): int(points) for user_id, points in rows}
+
+
+def get_vote_message_map():
+    with db_lock:
+        rows = conn.execute("""
+            SELECT streamer_id, message_id
+            FROM vote_messages
+        """).fetchall()
+    return {str(streamer_id): int(message_id) for streamer_id, message_id in rows}
+
+
+def set_vote_message(streamer_id: int, message_id: int):
+    with db_lock:
+        conn.execute("""
+            INSERT INTO vote_messages (streamer_id, message_id)
+            VALUES (?, ?)
+            ON CONFLICT(streamer_id) DO UPDATE SET message_id=excluded.message_id
+        """, (str(streamer_id), str(message_id)))
+        conn.commit()
+
+
+def delete_vote_message(streamer_id: int):
+    with db_lock:
+        conn.execute("""
+            DELETE FROM vote_messages WHERE streamer_id=?
+        """, (str(streamer_id),))
+        conn.commit()
+
+
+def get_state(key: str, default: str | None = None) -> str | None:
+    with db_lock:
+        row = conn.execute("""
+            SELECT value FROM bot_state WHERE key=?
+        """, (key,)).fetchone()
+    return row[0] if row else default
+
+
+def set_state(key: str, value: str):
+    with db_lock:
+        conn.execute("""
+            INSERT INTO bot_state (key, value)
+            VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value
+        """, (key, value))
+        conn.commit()
+
+
+def sync_session_progress(user_id: int, now_ts: float | None = None):
+    session = voice_sessions.get(user_id)
+    if session is None:
+        return
+
+    if now_ts is None:
+        now_ts = time.time()
+
+    elapsed = int(now_ts - session["last_ts"])
+    if elapsed <= 0:
+        return
+
+    if session["eligible"]:
+        session["carry_seconds"] += elapsed
+        whole_minutes = session["carry_seconds"] // 60
+        if whole_minutes > 0:
+            add_tp(user_id, whole_minutes)
+            session["carry_seconds"] = session["carry_seconds"] % 60
+
+    session["last_ts"] = now_ts
+
+
+def update_streamer_session_for_member(member: discord.Member, channel: discord.abc.GuildChannel | None):
+    if not is_streamer(member):
+        return
+
+    user_id = member.id
+
+    if channel is None:
+        session = voice_sessions.get(user_id)
+        if session is not None:
+            sync_session_progress(user_id)
+            voice_sessions.pop(user_id, None)
+        return
+
+    eligible = has_non_streamer_listener(channel)
+
+    session = voice_sessions.get(user_id)
+    if session is None:
+        voice_sessions[user_id] = {
+            "channel_id": channel.id,
+            "last_ts": time.time(),
+            "eligible": eligible,
+            "carry_seconds": 0
+        }
+        return
+
+    sync_session_progress(user_id)
+    session["channel_id"] = channel.id
+    session["eligible"] = eligible
+
+
+def refresh_streamer_sessions_in_channel(channel: discord.abc.GuildChannel | None):
+    if channel is None:
+        return
+
+    for member in channel.members:
+        if member.bot:
+            continue
+        if is_streamer(member):
+            update_streamer_session_for_member(member, channel)
+
+
+def get_current_streamers(guild: discord.Guild):
+    return sorted(
+        [m for m in guild.members if not m.bot and is_streamer(m)],
+        key=lambda m: m.display_name.lower()
+    )
+
+
+async def ensure_vote_messages(guild: discord.Guild):
+    channel = bot.get_channel(VOTE_CHANNEL_ID)
+    if channel is None:
+        return
+
+    streamers = get_current_streamers(guild)
+    existing_map = get_vote_message_map()
+
+    for streamer in streamers:
+        message_id = existing_map.get(str(streamer.id))
+        if message_id:
+            try:
+                await channel.fetch_message(message_id)
+                continue
+            except discord.NotFound:
+                delete_vote_message(streamer.id)
+            except discord.HTTPException:
+                continue
+
+        try:
+            msg = await channel.send(
+                f"【投票】{streamer.display_name}\nこの配信者を応援する場合はリアクションしてください。"
+            )
+            set_vote_message(streamer.id, msg.id)
+        except discord.HTTPException:
+            pass
+
+
+async def clear_vote_reactions():
+    channel = bot.get_channel(VOTE_CHANNEL_ID)
+    if channel is None:
+        return
+
+    vote_map = get_vote_message_map()
+    for _streamer_id, message_id in vote_map.items():
+        try:
+            msg = await channel.fetch_message(message_id)
+            await msg.clear_reactions()
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+            continue
+
+
+async def build_tp_ranking_lines(guild: discord.Guild):
+    base_points = get_tp_points_map()
+    totals = {}
+
+    for user_id, pts in base_points.items():
+        totals[user_id] = totals.get(user_id, 0) + pts
+
+    channel = bot.get_channel(VOTE_CHANNEL_ID)
+    if channel is not None:
+        vote_map = get_vote_message_map()
+        for streamer_id, message_id in vote_map.items():
+            try:
+                msg = await channel.fetch_message(message_id)
+            except (discord.NotFound, discord.HTTPException):
+                continue
+
+            reaction_total = 0
+            for reaction in msg.reactions:
+                reaction_total += reaction.count
+
+            if reaction_total > 0:
+                totals[streamer_id] = totals.get(streamer_id, 0) + reaction_total
+
+    rows = sorted(totals.items(), key=lambda x: x[1], reverse=True)
+
+    lines = ["🏆 今週の配信TPランキング"]
+    if not rows:
+        lines.append("まだデータがありません。")
+        return lines
+
+    for i, (user_id, points) in enumerate(rows[:20], start=1):
+        member = guild.get_member(int(user_id))
+        name = member.display_name if member else f"User {user_id}"
+        lines.append(f"{i}位：{name} - {points}TP")
+
+    return lines
+
+
+# =========================
+# TASKS
+# =========================
 @tasks.loop(minutes=25)
 async def periodic_cleanup():
     await remove_expired_completion_roles()
 
 
+@tasks.loop(minutes=1)
+async def tp_voice_tick():
+    now_ts = time.time()
+    for user_id in list(voice_sessions.keys()):
+        sync_session_progress(user_id, now_ts)
+
+
+@tasks.loop(hours=1)
+async def tp_update_ranking():
+    guild = bot.get_guild(GUILD_ID)
+    if guild is None:
+        return
+
+    channel = bot.get_channel(RANKING_CHANNEL_ID)
+    if channel is None:
+        return
+
+    lines = await build_tp_ranking_lines(guild)
+    content = "\n".join(lines)
+
+    message_id_text = get_state("tp_ranking_message_id")
+    if message_id_text:
+        try:
+            msg = await channel.fetch_message(int(message_id_text))
+            await msg.edit(content=content)
+            return
+        except (discord.NotFound, discord.HTTPException):
+            pass
+
+    try:
+        msg = await channel.send(content)
+        set_state("tp_ranking_message_id", str(msg.id))
+    except discord.HTTPException:
+        pass
+
+
+@tasks.loop(minutes=1)
+async def tp_weekly_reset_loop():
+    now = now_jst()
+    week_key = f"{now.year}-W{now.isocalendar().week:02d}"
+    last_reset_week = get_state("tp_last_reset_week")
+
+    if last_reset_week == week_key:
+        return
+
+    # 初回起動時は現在週を登録するだけ。いきなりリセットしない。
+    if last_reset_week is None:
+        set_state("tp_last_reset_week", week_key)
+        return
+
+    # 月曜 00:00 台でのみ週切り替え処理
+    if now.weekday() == 0 and now.hour == 0:
+        reset_all_tp()
+        await clear_vote_reactions()
+        set_state("tp_last_reset_week", week_key)
+
+        guild = bot.get_guild(GUILD_ID)
+        if guild is not None:
+            await ensure_vote_messages(guild)
+
+        await tp_update_ranking()
+
+
+# =========================
+# CHANNEL SPECIAL HANDLERS
+# =========================
 async def handle_instant_channel(message: discord.Message):
     global latest_instant_post
 
@@ -764,15 +1115,18 @@ async def handle_steal_channel(message: discord.Message):
         pass
 
 
+# =========================
+# EVENTS
+# =========================
 @bot.event
 async def on_ready():
     backup_database()
     migrate_gacha_logs_to_user_characters()
 
     try:
-        guild = discord.Object(id=GUILD_ID)
-        bot.tree.copy_global_to(guild=guild)
-        synced = await bot.tree.sync(guild=guild)
+        guild_obj = discord.Object(id=GUILD_ID)
+        bot.tree.copy_global_to(guild=guild_obj)
+        synced = await bot.tree.sync(guild=guild_obj)
         print(f"Guild synced {len(synced)} commands")
     except Exception as e:
         print(f"Sync error: {e}")
@@ -782,10 +1136,56 @@ async def on_ready():
     except Exception as e:
         print(f"Initial role cleanup error: {e}")
 
+    guild = bot.get_guild(GUILD_ID)
+    if guild is not None:
+        await ensure_vote_messages(guild)
+
+        # 起動時に既にVCにいる配信者をセッション登録
+        for vc in guild.voice_channels:
+            refresh_streamer_sessions_in_channel(vc)
+        for stage in guild.stage_channels:
+            refresh_streamer_sessions_in_channel(stage)
+
     if not periodic_cleanup.is_running():
         periodic_cleanup.start()
 
+    if not tp_voice_tick.is_running():
+        tp_voice_tick.start()
+
+    if not tp_update_ranking.is_running():
+        tp_update_ranking.start()
+
+    if not tp_weekly_reset_loop.is_running():
+        tp_weekly_reset_loop.start()
+
+    try:
+        if guild is not None:
+            await tp_update_ranking()
+    except Exception as e:
+        print(f"Initial TP ranking update error: {e}")
+
     print(f"Logged in as {bot.user} ({bot.user.id})")
+
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if member.bot:
+        return
+
+    # 退室/移動前のチャンネルを再評価
+    if before.channel is not None:
+        refresh_streamer_sessions_in_channel(before.channel)
+
+    # 入室/移動後のチャンネルを再評価
+    if after.channel is not None:
+        refresh_streamer_sessions_in_channel(after.channel)
+
+    # 本人が配信者なら最終状態を整える
+    if is_streamer(member):
+        if after.channel is None:
+            update_streamer_session_for_member(member, None)
+        else:
+            update_streamer_session_for_member(member, after.channel)
 
 
 @bot.event
@@ -844,6 +1244,9 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
+# =========================
+# COMMANDS
+# =========================
 @bot.tree.command(name="balance", description="自分のHPTを見る")
 async def balance(interaction: discord.Interaction):
     if interaction.channel_id != COMMON_COMMAND_CHANNEL_ID:

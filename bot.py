@@ -166,7 +166,7 @@ WEEKLY_GACHAS = [
         "name": "通常ガチャ 4月1週目",
         "type": "normal",
         "start": "2026-04-01 00:00",
-        "end": "2026-04-07 00:00",
+        "end": "2026-04-06 23:59",
         "role_id": 1487365710035292252,
         "cost": 50,
         "items": [
@@ -181,7 +181,28 @@ WEEKLY_GACHAS = [
             ("char_019", "[019]りおな", "S", 6, "https://cdn.discordapp.com/attachments/1486776583858425911/1487898695621017620/S_20.png?ex=69cad124&is=69c97fa4&hm=2df05b28aab82223a47429328d2a137b13540bac23d923696c29329490caca06&"),
             ("char_020", "[020]まさき", "A", 11, "https://cdn.discordapp.com/attachments/1486776583858425911/1487898828748095711/S_21.png?ex=69cad144&is=69c97fc4&hm=24c257abd5ed1b65ae7ebd2772e247b0ecbf3b0e4d8acf82817ee039f2bcc840&"),
         ]
-    }
+    },
+    {
+        "id": "normal_2026_w14",
+        "name": "通常ガチャ 4月2週目",
+        "type": "normal",
+        "start": "2026-04-07 00:00",
+        "end": "2026-04-12 23:59",
+        "role_id": 1490667807573020822,
+        "cost": 50,
+        "items": [
+            ("char_021", "[021]りこ", "A", 10, "https://cdn.discordapp.com/attachments/1487456623642280062/1489349452614602834/S_2.png?ex=69d4b584&is=69d36404&hm=8e1c65e61a119efa4f436802e5dc74c055e6deac7a96420e40fd128925633c3a&"),
+            ("char_022", "[022]あにゃ", "S", 8, "https://cdn.discordapp.com/attachments/1487490322329112736/1489350892678545598/S_4.png?ex=69d4b6db&is=69d3655b&hm=7648fa56965f627acdb9db37ff6db094833313a3f42cb5016e912094f00700ba&"),
+            ("char_023", "[023]かい", "S", 8, "https://cdn.discordapp.com/attachments/1487783134320922755/1489351790523580558/S_5.png?ex=69d4b7b1&is=69d36631&hm=6f85412b5dc4f29a493adecadf038502c023357bdf51c81f30d3ace32f2722da&"),
+            ("char_024", "[024]みらん", "A", 10, "https://cdn.discordapp.com/attachments/1487591277535952947/1489353161863987260/S_6.png?ex=69d4b8f8&is=69d36778&hm=160287991e35672be2f44769b5706d78d845df2a24c15e27a6162a1365ee25b1&"),
+            ("char_025", "[025]ねお", "A", 10, "https://cdn.discordapp.com/attachments/1487800069611589793/1490397908544000160/S_2.png?ex=69d49177&is=69d33ff7&hm=e576765f5036eb65283bc1e24afe5c1ef3869e5b4c01129f020b45ec1d123036&"),
+            ("char_026", "[026]りな", "A", 10, "https://cdn.discordapp.com/attachments/1487523637983449149/1490669804280090724/S_3.png?ex=69d4e5f0&is=69d39470&hm=2521bef0bb46bafda1cc436e2c1478d64f51d52aff6f8511b24f01713c800836&"),
+            ("char_027", "[027]はるか", "A", 10, "https://cdn.discordapp.com/attachments/1487622565433311232/1490670589097283755/S_4.png?ex=69d4e6ab&is=69d3952b&hm=dbd812d27bce98a9471f66a77dc86021450129edd4ef67a1aec27e533df76510&"),
+            ("char_028", "[028]かよ", "B", 13, "https://cdn.discordapp.com/attachments/1486863251525603478/1490671720758247544/S_5.png?ex=69d4e7b9&is=69d39639&hm=95d5ee5b8be89dfda9a925dab7c672a2e666ac506da1ab25bd4e73a4396d4e96&"),
+            ("char_029", "[029]さくら", "S", 8, "https://cdn.discordapp.com/attachments/1487485330457362573/1490673298974048387/S_6.png?ex=69d4e931&is=69d397b1&hm=4145e9aee2a337f39bd569da7e7fa2bff2a6a21f270c904a23c8ab3a65355b8a&"),
+            ("char_030", "[030]あんな", "B", 13, "https://cdn.discordapp.com/attachments/1487591277535952947/1490673974743404736/S_7.png?ex=69d4e9d2&is=69d39852&hm=862538d25cd0bb53cb9d991913f86873f334e3fd858cea424046bd864d0cfb29&"),
+        ]
+    },
 ]
 
 LIMITED_GACHAS = [

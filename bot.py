@@ -899,7 +899,7 @@ async def on_member_join(member: discord.Member):
                     f"{member.mention} さん、参加ありがとうございます！\n"
                     f"ウェルカムボーナスとして **{bonus}HPT** を付与しました。\n\n"
                     "このサーバーでは、画像・動画投稿やガチャで遊べます。\n"
-                    "まずは `/balance` でHPTを確認してみてください。"
+                    "まずは残高確認chより `/balance` でHPTを確認してみてください。"
                 ),
                 color=0x66CCFF,
             )

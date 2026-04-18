@@ -84,17 +84,17 @@ CONFIG = {
 # 復刻や再利用を楽にするため、キャラ情報はここだけで管理
 CHARACTERS = {
     "char_001": {
-        "name": "[001]みゆ",
+        "name": "[001]A",
         "rarity": "S",
         "image_url": "https://example.com/char_001.png",
     },
     "char_002": {
-        "name": "[002]りみ",
+        "name": "[002]B",
         "rarity": "S",
         "image_url": "https://example.com/char_002.png",
     },
     "char_003": {
-        "name": "[003]さえ",
+        "name": "[003]C",
         "rarity": "A",
         "image_url": "https://example.com/char_003.png",
     },
@@ -125,7 +125,7 @@ GACHAS = [
     # 例: 期間限定を追加する場合
     # {
     #     "id": "limited_serina_revival_2026_05",
-    #     "name": "せりな復刻ガチャ",
+    #     "name": "期間限定ガチャ",
     #     "kind": "limited",
     #     "channel_id": CONFIG["channels"]["limited_gacha_a"],
     #     "start": "2026-05-01 00:00",
